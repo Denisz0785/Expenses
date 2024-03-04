@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"expenses/repository"
 	"flag"
 	"fmt"
@@ -18,33 +19,54 @@ type Conn_DB struct {
 }
 
 func main() {
+	// add values to struct from environment variables by prefix
 	var s Conn_DB
 	err := envconfig.Process("PGEXP", &s)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	format := "host: %s\nuser: %s\npassword: %s\ndatabase: %s\n"
+	format := "Date of environment variables: host: %s\nuser: %s\npassword: %s\ndatabase: %s\n"
 	_, err = fmt.Printf(format, s.Host, s.User, s.Password, s.DbName)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-
-	type_expenses := repository.Get_expense_types("Ivan")
-	fmt.Println(*type_expenses)
 	fmt.Println()
-	// ./expenses cmd=get_expense_types user=vasya
+
+	// ConnDB connects to DB
+	myUrl := "MYURL"
+	conn := repository.ConnDB(myUrl)
+	defer conn.Close(context.Background())
+
+	//GetExpenseType gets one row of type of expenses from DB by name
+	name := "Ivan"
+	type_expenses := repository.GetExpenseType(conn, name)
+	fmt.Printf("type of expenses %s: %s\n", name, *type_expenses)
+	fmt.Println()
+
+	//GetManyRows gets all rows of type of expenses from DB by name
+	rows := repository.GetManyRows(conn, name)
+	fmt.Printf("all types of expenses %s: %v\n", name, rows)
+	fmt.Println()
+
+	// AddValuesDB insert row to the table user
+	repository.AddValuesDB(conn)
+	fmt.Println()
+
+	// create command ./expenses cmd=get_expense_types user=Ivan
 	funcPtr := flag.String("cmd", "none", "function")
 	userPtr := flag.String("name", "none", "user's name")
 	flag.Parse()
-	fmt.Println("function", *funcPtr)
-	fmt.Println("user's name", *userPtr)
-	fmt.Println("tail", flag.Args())
+	fmt.Println("Values of flags are:")
+	fmt.Println("function:", *funcPtr)
+	fmt.Println("user's name:", *userPtr)
+	fmt.Println("tail:", flag.Args())
 
-	var resultExpenses *string
-	if strings.EqualFold(*funcPtr, "Get_expense_types") {
-		resultExpenses = repository.Get_expense_types(*userPtr)
+	var resultExpenses []string
+	if strings.EqualFold(*funcPtr, "GetManyRows") {
+		resultExpenses = repository.GetManyRows(conn, *userPtr)
 	}
-	fmt.Printf("Expenses_type of %s = %s\n", *userPtr, *resultExpenses)
+	fmt.Println()
+	fmt.Printf("Expenses_type of %s = %s\n", *userPtr, resultExpenses)
 
 }
