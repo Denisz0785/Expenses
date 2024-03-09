@@ -4,4 +4,4 @@
 2.  Вынести параметры соединения с postgresql в переменные окружения 
  PG_HOST PG_USER PG_PASSWORD PG_DBNAME https://github.com/kelseyhightower/envconfig
 3.  Создать команду с помощью которой можно получить список всех expense_types по иени пользователя
-    ./expenses cmd=get_manyrows=Ivan
+    ./expenses -cmd=get_manyrows -name=Ivan

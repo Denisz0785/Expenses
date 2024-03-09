@@ -8,6 +8,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -69,4 +70,27 @@ func main() {
 	fmt.Println()
 	fmt.Printf("Expenses_type of %s = %s\n", *userPtr, resultExpenses)
 
+	//begin a transaction
+	tx, err := conn.Begin(context.Background())
+	if err != nil {
+		//return err
+		fmt.Println("Error of begin transaction")
+	}
+
+	defer tx.Rollback(context.Background())
+
+	_, err = tx.Exec(context.Background(), "insert into users(name, surname,login,pass,email) values ('John','Sidorov','belka','oreh','a@a.com')")
+	if err != nil {
+		//return err
+		fmt.Println("Error of Exec")
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		//return err
+		fmt.Println("Error of commit transaction")
+	}
+	// end of transaction
+	
+	}
 }
