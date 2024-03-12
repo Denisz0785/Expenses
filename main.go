@@ -2,95 +2,79 @@ package main
 
 import (
 	"context"
+	"expenses/getenv"
 	"expenses/repository"
 	"flag"
 	"fmt"
-	"log"
 	"strings"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/kelseyhightower/envconfig"
 )
 
-type Conn_DB struct {
-	Host     string //`envconfig:"PGEXP_HOST"`
-	User     string //`envconfig:"PGEXP_USER"`
-	Password string //`envconfig:"PGEXP_PASSWORD"`
-	DbName   string //`envconfig:"PGEXP_DBNAME"`
-}
-
 func main() {
-	// add values to struct from environment variables by prefix
-	var s Conn_DB
-	err := envconfig.Process("PGEXP", &s)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	// GetEnvVarForDB() gets environment variables by prefix, adds to struct and prints it
+	getenv.GetEnvVarForDB()
 
-	format := "Date of environment variables: host: %s\nuser: %s\npassword: %s\ndatabase: %s\n"
-	_, err = fmt.Printf(format, s.Host, s.User, s.Password, s.DbName)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	fmt.Println()
-
-	// ConnDB connects to DB
+	// ConnectToDB connects to DB
 	myUrl := "MYURL"
-	conn := repository.ConnDB(myUrl)
+	conn, err := repository.ConnectToDB(myUrl)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 	defer conn.Close(context.Background())
 
 	//GetExpenseType gets one row of type of expenses from DB by name
-	name := "Ivan"
-	type_expenses := repository.GetExpenseType(conn, name)
-	fmt.Printf("type of expenses %s: %s\n", name, *type_expenses)
+	name := "Igor"
+	typeExpenses, err1 := repository.GetExpenseType(conn, name)
+	if err1 != nil {
+		fmt.Println(err1.Error())
+	}
+	fmt.Printf("one type of expenses %s: %s\n", name, *typeExpenses)
 	fmt.Println()
 
 	//GetManyRows gets all rows of type of expenses from DB by name
-	rows := repository.GetManyRows(conn, name)
+	rows, err2 := repository.GetManyRowsByName(conn, name)
+	if err2 != nil {
+		fmt.Println(err2.Error())
+	}
 	fmt.Printf("all types of expenses %s: %v\n", name, rows)
 	fmt.Println()
 
-	// AddValuesDB insert row to the table user
-	repository.AddValuesDB(conn)
+	// AddValuesDB inserts a row to the table users
+	err2 = repository.AddValuesDB(conn)
+	if err2 != nil {
+		fmt.Println(err2.Error())
+	}
 	fmt.Println()
 
-	// create command ./expenses cmd=get_expense_types user=Ivan
+	// define flags for getting values of flags command ./expenses cmd=get_expense_types user=Ivan and
+	// ./expenses -cmd=Add -login=igor23 -exp_type=swimming -time=2024-02-25-17:26 -spent=500
 	funcPtr := flag.String("cmd", "none", "function")
 	userPtr := flag.String("name", "none", "user's name")
+	loginPtr := flag.String("login", "none", "user's login")
+	expTypePtr := flag.String("exp_type", "none", "type of expenses")
+	timePtr := flag.String("time", "none", "time of expenses")
+	spentPtr := flag.Float64("spent", 0.0, "amount of expenses")
+	//Parse() parses the command line into the defined flags
 	flag.Parse()
-	fmt.Println("Values of flags are:")
-	fmt.Println("function:", *funcPtr)
-	fmt.Println("user's name:", *userPtr)
-	fmt.Println("tail:", flag.Args())
 
-	var resultExpenses []string
-	if strings.EqualFold(*funcPtr, "GetManyRows") {
-		resultExpenses = repository.GetManyRows(conn, *userPtr)
-	}
-	fmt.Println()
-	fmt.Printf("Expenses_type of %s = %s\n", *userPtr, resultExpenses)
+	// define which command was input
+	switch {
+	case strings.EqualFold(*funcPtr, "Get_ManyRows"):
+		var resultExpenses []string
+		resultExpenses, err = repository.GetManyRowsByName(conn, *userPtr)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		fmt.Println()
+		fmt.Printf("Expenses_type of %s = %s\n", *userPtr, resultExpenses)
 
-	//begin a transaction
-	tx, err := conn.Begin(context.Background())
-	if err != nil {
-		//return err
-		fmt.Println("Error of begin transaction")
-	}
-
-	defer tx.Rollback(context.Background())
-
-	_, err = tx.Exec(context.Background(), "insert into users(name, surname,login,pass,email) values ('John','Sidorov','belka','oreh','a@a.com')")
-	if err != nil {
-		//return err
-		fmt.Println("Error of Exec")
+	case strings.EqualFold(*funcPtr, "add"):
+		//
+		err := repository.AddExpense(conn, loginPtr, expTypePtr, timePtr, spentPtr)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+	default:
+		fmt.Println("check your input data in a command-line")
 	}
 
-	err = tx.Commit(context.Background())
-	if err != nil {
-		//return err
-		fmt.Println("Error of commit transaction")
-	}
-	// end of transaction
-	
-	}
 }
