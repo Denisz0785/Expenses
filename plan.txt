@@ -19,4 +19,4 @@
 
 Создай ветку new_expense и пул риквест
 
-./expenses -cmd=Add -login=igor23 -exp_type=swimming -time=2024-02-25-17:26 -spent=500
+./expenses -cmd=Add -login=igor23 -exp_type=swimming -time="2024-02-25 17:26" -spent=500

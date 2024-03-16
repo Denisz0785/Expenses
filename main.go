@@ -21,9 +21,12 @@ func main() {
 	}
 	defer conn.Close(context.Background())
 
+	// Create new structure wich consist data about connection with database
+	ConnExpRepo := repository.NewExpenseRepo(conn)
+
 	//GetExpenseType gets one row of type of expenses from DB by name
 	name := "Igor"
-	typeExpenses, err1 := repository.GetExpenseType(conn, name)
+	typeExpenses, err1 := ConnExpRepo.GetExpenseType(name)
 	if err1 != nil {
 		fmt.Println(err1.Error())
 	}
@@ -31,7 +34,7 @@ func main() {
 	fmt.Println()
 
 	//GetManyRows gets all rows of type of expenses from DB by name
-	rows, err2 := repository.GetManyRowsByName(conn, name)
+	rows, err2 := ConnExpRepo.GetManyRowsByName(name)
 	if err2 != nil {
 		fmt.Println(err2.Error())
 	}
@@ -39,7 +42,7 @@ func main() {
 	fmt.Println()
 
 	// AddValuesDB inserts a row to the table users
-	err2 = repository.AddValuesDB(conn)
+	err2 = ConnExpRepo.AddValuesDB()
 	if err2 != nil {
 		fmt.Println(err2.Error())
 	}
@@ -60,7 +63,7 @@ func main() {
 	switch {
 	case strings.EqualFold(*funcPtr, "Get_ManyRows"):
 		var resultExpenses []string
-		resultExpenses, err = repository.GetManyRowsByName(conn, *userPtr)
+		resultExpenses, err = ConnExpRepo.GetManyRowsByName(*userPtr)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
@@ -69,7 +72,7 @@ func main() {
 
 	case strings.EqualFold(*funcPtr, "add"):
 		//
-		err := repository.AddExpense(conn, loginPtr, expTypePtr, timePtr, spentPtr)
+		err := ConnExpRepo.AddExpTransaction(loginPtr, expTypePtr, timePtr, spentPtr)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
