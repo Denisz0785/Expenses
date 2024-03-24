@@ -267,4 +267,5 @@ func (r *ExpenseRepo) AddExpense(ctx context.Context, login *string, expType *st
 		}
 
 	}
-	return ni
+	return nil
+}
