@@ -37,7 +37,7 @@ func main() {
 	switch {
 	case strings.EqualFold(*funcPtr, "Get_ManyRows"):
 		var resultExpenses []string
-		resultExpenses, err = ConnExpRepo.GetUserExpenseTypes(*userPtr)
+		resultExpenses, err = ConnExpRepo.GetUserExpenseTypes(ctx, *userPtr)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
@@ -46,7 +46,7 @@ func main() {
 
 	case strings.EqualFold(*funcPtr, "add"):
 		//
-		err := ConnExpRepo.AddExpTransaction(ctx, loginPtr, expTypePtr, timePtr, spentPtr)
+		err := ConnExpRepo.CreateUserExpense(ctx, loginPtr, expTypePtr, timePtr, spentPtr)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
