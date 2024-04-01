@@ -10,10 +10,10 @@ import (
 
 type repository interface {
 	GetExpenseType()
-	AddValuesDB()
+	CreateValuesDB()
 	GetUserExpenseTypes()
-	AddExpense()
-	AddExpenseType()
+	CreateExpense()
+	CreateExpenseType()
 	GetExpenseTypeID()
 	SetExpenseTimeAndSpent()
 }
@@ -68,8 +68,8 @@ func (r *ExpenseRepo) IsExpenseTypeExists(ctx context.Context, expType *string) 
 	return existExpType, nil
 }
 
-// AddExpenseType insert a new type of expenses in a table expense_type
-func (r *ExpenseRepo) AddExpenseType(ctx context.Context, tx pgx.Tx, expType *string, userId int) error {
+// CreateExpenseType insert a new type of expenses in a table expense_type
+func (r *ExpenseRepo) CreateExpenseType(ctx context.Context, tx pgx.Tx, expType *string, userId int) error {
 	_, err := tx.Exec(ctx, "Insert into expense_type(users_id,title) values ($1,$2)", userId, *expType)
 	if err != nil {
 		return err
@@ -88,19 +88,19 @@ func (r *ExpenseRepo) GetExpenseTypeID(ctx context.Context, tx pgx.Tx, expType *
 	return &expTypeId, err
 }
 
-// SetExpenseTimeAndSpent adds new row in a expense table
+// SetExpenseTimeAndSpent Creates new row in a expense table
 func (r *ExpenseRepo) SetExpenseTimeAndSpent(ctx context.Context, tx pgx.Tx, expTypeId *int, timeSpent *string, spent *float64) error {
-	// add a new row into table expense
+	// Create a new row into table expense
 
 	_, err := tx.Exec(ctx, "Insert into expense(expense_type_id,reated_at, spent_money) values ($1,$2,$3)", *expTypeId, *timeSpent, *spent)
 	if err != nil {
 		return err
 	}
-	fmt.Println("was added")
+	fmt.Println("was Createed")
 	return err
 }
 
-// CreateUserExpense checks existing type of expenses from command-line in a table, and adds new row to expense table by transaction
+// CreateUserExpense checks existing type of expenses from command-line in a table, and Creates new row to expense table by transaction
 func (r *ExpenseRepo) CreateUserExpense(ctx context.Context, login *string, expType *string, timeSpent *string, spent *float64) error {
 	// checking expType exists in a table expense_type or not
 	existExpType, err := r.IsExpenseTypeExists(ctx, expType)
@@ -125,8 +125,8 @@ func (r *ExpenseRepo) CreateUserExpense(ctx context.Context, login *string, expT
 			err = fmt.Errorf("QueryRow failed: %v", err)
 			return err
 		}
-		// adding new type of expense to expense_type table
-		err = r.AddExpenseType(ctx, tx, expType, userId)
+		// Createing new type of expense to expense_type table
+		err = r.CreateExpenseType(ctx, tx, expType, userId)
 		if err != nil {
 			return err
 		}
@@ -135,7 +135,7 @@ func (r *ExpenseRepo) CreateUserExpense(ctx context.Context, login *string, expT
 		if err1 != nil {
 			return err1
 		}
-		// adding a new row into expense table
+		// Createing a new row into expense table
 		err = r.SetExpenseTimeAndSpent(ctx, tx, expId, timeSpent, spent)
 		if err != nil {
 			return err
@@ -147,7 +147,7 @@ func (r *ExpenseRepo) CreateUserExpense(ctx context.Context, login *string, expT
 		if err1 != nil {
 			return err1
 		}
-		// adding a new row into expense table
+		// Createing a new row into expense table
 		err = r.SetExpenseTimeAndSpent(ctx, tx, expId, timeSpent, spent)
 		if err != nil {
 			return err
