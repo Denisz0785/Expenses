@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"expenses/repository"
+	"expenses/server"
 	"flag"
 	"fmt"
 	"strings"
@@ -30,6 +31,7 @@ func main() {
 	expTypePtr := flag.String("exp_type", "none", "type of expenses")
 	timePtr := flag.String("time", "none", "time of expenses")
 	spentPtr := flag.Float64("spent", 0.0, "amount of expenses")
+
 	//Parse() parses the command line into the defined flags
 	flag.Parse()
 
@@ -50,6 +52,9 @@ func main() {
 		if err != nil {
 			fmt.Println(err.Error())
 		}
+	case strings.EqualFold(*funcPtr, "run_server"):
+		server.Run((*server.RepoExpense)(ConnExpRepo))
+
 	default:
 		fmt.Println("check your input data in a command-line")
 	}

@@ -26,6 +26,26 @@ func NewExpenseRepo(conn *pgx.Conn) *ExpenseRepo {
 	return &ExpenseRepo{conn: conn}
 }
 
+func (r *ExpenseRepo) GetTypesExpenseUser(ctx context.Context, id int) ([]string, error) {
+	rows, _ := r.conn.Query(ctx, "SELECT title from expense_type where expense_type.users_id=$1", id)
+	numbers, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		err = fmt.Errorf("unable to connect to database: %v", err)
+		return nil, err
+	}
+	return numbers, nil
+}
+
+func (r *ExpenseRepo) GetIdExpenseUser(ctx context.Context, id int) ([]string, error) {
+	rows, _ := r.conn.Query(ctx, "SELECT id from expense_type where expense_type.users_id=$1", id)
+	numbers, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		err = fmt.Errorf("unable to connect to database: %v", err)
+		return nil, err
+	}
+	return numbers, nil
+}
+
 // GetUserExpenseTypes gets all rows of type of expenses from DB by name
 func (r *ExpenseRepo) GetUserExpenseTypes(ctx context.Context, name string) ([]string, error) {
 	rows, _ := r.conn.Query(ctx, "SELECT title from expense_type, users where expense_type.users_id=users.id and users.name=$1", name)
