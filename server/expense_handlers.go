@@ -3,18 +3,31 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"expenses/repository"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+
+	"github.com/jackc/pgx/v5"
 )
 
-type RepoExpense repository.ExpenseRepo
+type RepoExpense struct {
+	Conn *pgx.Conn
+}
 
 type Expenses struct {
 	Id    int64
 	Title string
+}
+
+func (r *RepoExpense) GetTypesExpenseUser(ctx context.Context, id1 int) ([]Expenses, error) {
+	rows, _ := r.Conn.Query(ctx, "SELECT id, title from expense_type where expense_type.users_id=$1", id1)
+	expense, err := pgx.CollectRows(rows, pgx.RowToStructByName[Expenses])
+	if err != nil {
+		err = fmt.Errorf("unable to connect to database: %v", err)
+		return nil, err
+	}
+	return expense, nil
 }
 
 func (r *RepoExpense) GetExpenseHandler(w http.ResponseWriter, req *http.Request) {
@@ -25,42 +38,14 @@ func (r *RepoExpense) GetExpenseHandler(w http.ResponseWriter, req *http.Request
 		if err != nil {
 			fmt.Fprintf(w, "Uncorrect value of id%v", err)
 		}
-		// convert r to ExpenseRepo from repository to call methods from repository
-		expenseRepo := repository.ExpenseRepo(*r)
 		// []titleExpense keep title of expenses of  user
-		titleExpense, err := expenseRepo.GetTypesExpenseUser(ctx, id)
+		titleExpense, err := r.GetTypesExpenseUser(ctx, id)
 		if err != nil {
 			fmt.Println(err.Error())
 			return
 		}
-		// []idExpenseString keep Id of expenses of user
-		idExpenseString, err := expenseRepo.GetIdExpenseUser(ctx, id)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-
-		idExpenseInt := make([]int, len(idExpenseString))
-		idExpenseInt64 := make([]int64, len(idExpenseInt))
-		// convert string type of ID to Int
-		for i, v := range idExpenseString {
-			idExpenseInt[i], err = strconv.Atoi(v)
-			if err != nil {
-				fmt.Fprintf(w, "Uncorrect type of id%v", err)
-			}
-		}
-		// convert int type of ID to int64
-		for i, v := range idExpenseInt {
-			idExpenseInt64[i] = int64(v)
-		}
-		// []expenseList keep list of id and title of user's type of expenses
-		expenseList := make([]Expenses, 0, len(idExpenseInt64))
-		for i := 0; i < len(titleExpense); i++ {
-			expenseList = append(expenseList, Expenses{Id: idExpenseInt64[i], Title: titleExpense[i]})
-		}
-		fmt.Println(expenseList)
 		// write to w json data of expenseList
-		err = json.NewEncoder(w).Encode(expenseList)
+		err = json.NewEncoder(w).Encode(titleExpense)
 		if err != nil {
 			fmt.Println("Error of marshalig to json")
 		}
