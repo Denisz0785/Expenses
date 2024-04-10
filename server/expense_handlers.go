@@ -3,34 +3,22 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"expenses/repository"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
-
-	"github.com/jackc/pgx/v5"
 )
 
-type RepoExpense struct {
-	Conn *pgx.Conn
+type Server struct {
+	conn *repository.ExpenseRepo
 }
 
-type Expenses struct {
-	Id    int64
-	Title string
+func NewServer(c *repository.ExpenseRepo) *Server {
+	return &Server{conn: c}
 }
 
-func (r *RepoExpense) GetTypesExpenseUser(ctx context.Context, id1 int) ([]Expenses, error) {
-	rows, _ := r.Conn.Query(ctx, "SELECT id, title from expense_type where expense_type.users_id=$1", id1)
-	expense, err := pgx.CollectRows(rows, pgx.RowToStructByName[Expenses])
-	if err != nil {
-		err = fmt.Errorf("unable to connect to database: %v", err)
-		return nil, err
-	}
-	return expense, nil
-}
-
-func (r *RepoExpense) GetExpenseHandler(w http.ResponseWriter, req *http.Request) {
+func (r *Server) GetExpenseHandler(w http.ResponseWriter, req *http.Request) {
 	ctx := context.Background()
 
 	if req.Method == http.MethodPost {
@@ -39,7 +27,7 @@ func (r *RepoExpense) GetExpenseHandler(w http.ResponseWriter, req *http.Request
 			fmt.Fprintf(w, "Uncorrect value of id%v", err)
 		}
 		// []titleExpense keep title of expenses of  user
-		titleExpense, err := r.GetTypesExpenseUser(ctx, id)
+		titleExpense, err := r.conn.GetTypesExpenseUser(ctx, id)
 		if err != nil {
 			fmt.Println(err.Error())
 			return

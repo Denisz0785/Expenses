@@ -2,13 +2,14 @@ package repository
 
 import (
 	"context"
+	dto "expenses/dto_expenses"
 	"fmt"
 	"os"
 
 	"github.com/jackc/pgx/v5"
 )
 
-type repository interface {
+type repo interface {
 	GetExpenseType()
 	CreateValuesDB()
 	GetUserExpenseTypes()
@@ -19,16 +20,26 @@ type repository interface {
 }
 
 type ExpenseRepo struct {
-	Conn *pgx.Conn
+	conn *pgx.Conn
 }
 
 func NewExpenseRepo(conn *pgx.Conn) *ExpenseRepo {
-	return &ExpenseRepo{Conn: conn}
+	return &ExpenseRepo{conn: conn}
+}
+
+func (r *ExpenseRepo) GetTypesExpenseUser(ctx context.Context, id1 int) ([]dto.Expenses, error) {
+	rows, _ := r.conn.Query(ctx, "SELECT id, title from expense_type where expense_type.users_id=$1", id1)
+	expense, err := pgx.CollectRows(rows, pgx.RowToStructByName[dto.Expenses])
+	if err != nil {
+		err = fmt.Errorf("unable to connect to database: %v", err)
+		return nil, err
+	}
+	return expense, nil
 }
 
 // GetUserExpenseTypes gets all rows of type of expenses from DB by name
 func (r *ExpenseRepo) GetUserExpenseTypes(ctx context.Context, name string) ([]string, error) {
-	rows, _ := r.Conn.Query(ctx, "SELECT title from expense_type, users where expense_type.users_id=users.id and users.name=$1", name)
+	rows, _ := r.conn.Query(ctx, "SELECT title from expense_type, users where expense_type.users_id=users.id and users.name=$1", name)
 	numbers, err := pgx.CollectRows(rows, pgx.RowTo[string])
 	if err != nil {
 		err = fmt.Errorf("unable to connect to database: %v", err)
@@ -39,7 +50,7 @@ func (r *ExpenseRepo) GetUserExpenseTypes(ctx context.Context, name string) ([]s
 
 // GetManyRows gets all rows of type of expenses from DB by login
 func (r *ExpenseRepo) GetExpenseTypesUser(ctx context.Context, login string) ([]string, error) {
-	rows, _ := r.Conn.Query(ctx, "SELECT title from expense_type, users where expense_type.users_id=users.id and users.login=$1", login)
+	rows, _ := r.conn.Query(ctx, "SELECT title from expense_type, users where expense_type.users_id=users.id and users.login=$1", login)
 	numbers, err := pgx.CollectRows(rows, pgx.RowTo[string])
 	if err != nil {
 		err = fmt.Errorf("unable to connect to database: %v", err)
@@ -50,7 +61,7 @@ func (r *ExpenseRepo) GetExpenseTypesUser(ctx context.Context, login string) ([]
 
 // IsExpenseTypeExists checking exist type of expense or not in a database
 func (r *ExpenseRepo) IsExpenseTypeExists(ctx context.Context, expType *string) (bool, error) {
-	rows, _ := r.Conn.Query(ctx, "Select title from expense_type")
+	rows, _ := r.conn.Query(ctx, "Select title from expense_type")
 	numbers, err := pgx.CollectRows(rows, pgx.RowTo[string])
 	existExpType := false
 	if err != nil {
@@ -109,7 +120,7 @@ func (r *ExpenseRepo) CreateUserExpense(ctx context.Context, login *string, expT
 	}
 
 	// begin transaction
-	tx, err := r.Conn.Begin(ctx)
+	tx, err := r.conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -119,7 +130,7 @@ func (r *ExpenseRepo) CreateUserExpense(ctx context.Context, login *string, expT
 		var userId int
 		loginValue := *login
 		// by QueryRow gets user's id from table users by login
-		err = r.Conn.QueryRow(ctx,
+		err = r.conn.QueryRow(ctx,
 			`SELECT id FROM users where login=$1`, loginValue).Scan(&userId)
 		if err != nil {
 			err = fmt.Errorf("QueryRow failed: %v", err)

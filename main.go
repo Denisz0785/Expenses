@@ -53,7 +53,8 @@ func main() {
 			fmt.Println(err.Error())
 		}
 	case strings.EqualFold(*funcPtr, "run_server"):
-		server.Run((*server.RepoExpense)(ConnExpRepo))
+		str := server.NewServer(ConnExpRepo)
+		server.Run(str)
 
 	default:
 		fmt.Println("check your input data in a command-line")
