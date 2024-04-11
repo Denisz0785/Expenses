@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	dto "expenses/dto_expenses"
 	"expenses/repository"
 	"fmt"
 	"io"
@@ -11,23 +12,31 @@ import (
 )
 
 type Server struct {
-	conn *repository.ExpenseRepo
+	repo *repository.ExpenseRepo
 }
 
 func NewServer(c *repository.ExpenseRepo) *Server {
-	return &Server{conn: c}
+	return &Server{repo: c}
 }
 
 func (r *Server) GetExpenseHandler(w http.ResponseWriter, req *http.Request) {
 	ctx := context.Background()
-
+	user := &dto.User{}
 	if req.Method == http.MethodPost {
-		id, err := strconv.Atoi(req.FormValue("id"))
-		if err != nil {
-			fmt.Fprintf(w, "Uncorrect value of id%v", err)
+		if checkId := req.FormValue("id"); checkId != "" {
+			id, err := strconv.Atoi(checkId)
+			if err != nil {
+				fmt.Fprintf(w, "Uncorrect value of id%v", err)
+			}
+			user.Id = id
 		}
+		login := req.FormValue("login")
+		user.Login = login
+		name := req.FormValue("name")
+		user.Name = name
+		fmt.Println(user)
 		// []titleExpense keep title of expenses of  user
-		titleExpense, err := r.conn.GetTypesExpenseUser(ctx, id)
+		titleExpense, err := r.repo.GetTypesExpenseUser(ctx, user)
 		if err != nil {
 			fmt.Println(err.Error())
 			return

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	dto "expenses/dto_expenses"
 	"expenses/repository"
 	"expenses/server"
 	"flag"
@@ -38,13 +39,13 @@ func main() {
 	// define which command was input
 	switch {
 	case strings.EqualFold(*funcPtr, "Get_ManyRows"):
-		var resultExpenses []string
-		resultExpenses, err = ConnExpRepo.GetUserExpenseTypes(ctx, *userPtr)
+		user := &dto.User{Name: *userPtr}
+		resultExpenses, err := ConnExpRepo.GetTypesExpenseUser(ctx, user)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
 		fmt.Println()
-		fmt.Printf("Expenses_type of %s = %s\n", *userPtr, resultExpenses)
+		fmt.Printf("Expenses_type of %v = %v\n", user.Name, resultExpenses)
 
 	case strings.EqualFold(*funcPtr, "add"):
 		//

@@ -6,6 +6,7 @@ type Expenses struct {
 }
 
 type User struct {
-	User  string
+	Name  string
 	Login string
+	Id    int
 }
