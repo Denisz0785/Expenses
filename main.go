@@ -39,7 +39,7 @@ func main() {
 	// define which command was input
 	switch {
 	case strings.EqualFold(*funcPtr, "Get_ManyRows"):
-		user := &dto.User{Name: *userPtr}
+		user := &dto.TypesExpenseUserParams{Name: *userPtr}
 		resultExpenses, err := ConnExpRepo.GetTypesExpenseUser(ctx, user)
 		if err != nil {
 			fmt.Println(err.Error())

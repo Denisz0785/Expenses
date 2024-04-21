@@ -5,7 +5,7 @@ type Expenses struct {
 	Title string
 }
 
-type User struct {
+type TypesExpenseUserParams struct {
 	Name  string
 	Login string
 	Id    int

@@ -29,37 +29,30 @@ func NewExpenseRepo(conn *pgx.Conn) *ExpenseRepo {
 	return &ExpenseRepo{conn: conn}
 }
 
-func (r *ExpenseRepo) GetTypesExpenseUser(ctx context.Context, d *dto.User) ([]dto.Expenses, error) {
-
-	if d.Id != 0 {
-		rows, _ := r.conn.Query(ctx, "SELECT id, title from expense_type where expense_type.users_id=$1", d.Id)
-		expense, err := pgx.CollectRows(rows, pgx.RowToStructByName[dto.Expenses])
-		if err != nil {
-			err = fmt.Errorf("unable to connect to database: %v", err)
-			return nil, err
-		}
-		return expense, nil
-	} else if d.Login != "" {
-		rows, _ := r.conn.Query(ctx, "SELECT e.title, e.id from expense_type e, users where e.users_id=users.id and users.login=$1", d.Login)
-		expense, err := pgx.CollectRows(rows, pgx.RowToStructByName[dto.Expenses])
-		if err != nil {
-			err = fmt.Errorf("unable to connect to database: %v", err)
-			return nil, err
-		}
-		return expense, nil
-
-	} else if d.Name != "" {
-		rows, _ := r.conn.Query(ctx, "SELECT e.title, e.id from expense_type e, users where e.users_id=users.id and users.name=$1", d.Name)
-		expense, err := pgx.CollectRows(rows, pgx.RowToStructByName[dto.Expenses])
-		if err != nil {
-			err = fmt.Errorf("unable to connect to database: %v", err)
-			return nil, err
-		}
-		return expense, nil
-	} else {
+func (r *ExpenseRepo) GetTypesExpenseUser(ctx context.Context, d *dto.TypesExpenseUserParams) ([]dto.Expenses, error) {
+	if d.Id == 0 && d.Login == "" && d.Name == "" {
 		err := errors.New("can't find info abour User")
 		return nil, err
 	}
+
+	var query string
+
+	if d.Id != 0 {
+		query = fmt.Sprintf("SELECT id, title from expense_type where expense_type.users_id=%d", d.Id)
+
+	} else if d.Login != "" {
+		query = fmt.Sprintf("SELECT e.title, e.id from expense_type e, users where e.users_id=users.id and users.login=%s", d.Login)
+
+	} else if d.Name != "" {
+		query = fmt.Sprintf("SELECT e.title, e.id from expense_type e, users where e.users_id=users.id and users.name=%s", d.Name)
+	}
+	rows, _ := r.conn.Query(ctx, query)
+	expense, err := pgx.CollectRows(rows, pgx.RowToStructByName[dto.Expenses])
+	if err != nil {
+		err = fmt.Errorf("unable to connect to database: %v", err)
+		return nil, err
+	}
+	return expense, nil
 }
 
 // IsExpenseTypeExists checking exist type of expense or not in a database

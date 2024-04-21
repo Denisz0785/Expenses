@@ -21,7 +21,7 @@ func NewServer(c *repository.ExpenseRepo) *Server {
 
 func (r *Server) GetExpenseHandler(w http.ResponseWriter, req *http.Request) {
 	ctx := context.Background()
-	user := &dto.User{}
+	user := &dto.TypesExpenseUserParams{}
 	if req.Method == http.MethodPost {
 		if checkId := req.FormValue("id"); checkId != "" {
 			id, err := strconv.Atoi(checkId)
