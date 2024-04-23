@@ -32,6 +32,8 @@ func main() {
 	expTypePtr := flag.String("exp_type", "none", "type of expenses")
 	timePtr := flag.String("time", "none", "time of expenses")
 	spentPtr := flag.Float64("spent", 0.0, "amount of expenses")
+	fileNamePtr := flag.String("name_file", "none", "name of file")
+	expId := flag.Float64("exp_id", 0.0, "id of expenses")
 
 	//Parse() parses the command line into the defined flags
 	flag.Parse()
@@ -56,7 +58,11 @@ func main() {
 	case strings.EqualFold(*funcPtr, "run_server"):
 		str := server.NewServer(ConnExpRepo)
 		server.Run(str)
-
+	case strings.EqualFold(*funcPtr, "addfile"):
+		err := ConnExpRepo.AddFileExpense(ctx, *fileNamePtr, int(*expId))
+		if err != nil {
+			fmt.Println(err)
+		}
 	default:
 		fmt.Println("check your input data in a command-line")
 	}

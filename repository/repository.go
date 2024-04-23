@@ -6,6 +6,7 @@ import (
 	dto "expenses/dto_expenses"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -103,8 +104,32 @@ func (r *ExpenseRepo) SetExpenseTimeAndSpent(ctx context.Context, tx pgx.Tx, exp
 	if err != nil {
 		return err
 	}
-	fmt.Println("was Createed")
+	fmt.Println("was Created")
 	return err
+}
+
+func (r *ExpenseRepo) AddFileExpense(ctx context.Context, filepath string, expId int) error {
+	var typeFile string
+	str := strings.Split(filepath, ".")
+	if len(str) == 2 {
+		extensionFile := strings.ToLower(str[1])
+		switch extensionFile {
+		case "doc", "pdf", "txt":
+			typeFile = "document"
+		case "jpg", "jpeg", "png", "gif", "raw", "svg", "bmp", "ico", "tiff", "webp":
+			typeFile = "image"
+		case "mp4", "webm", "mov", "avi", "flv", "wmv", "mkv", "mpeg", "3gp", "ogv":
+			typeFile = "video"
+		default:
+			return errors.New("формат сохраняемого файла не поддерживается")
+		}
+	}
+	query := "INSERT INTO files (expense_id,path_file, type_file) VALUES ($1,$2,$3)"
+	_, err := r.conn.Exec(ctx, query, expId, filepath, typeFile)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // CreateUserExpense checks existing type of expenses from command-line in a table, and Creates new row to expense table by transaction
