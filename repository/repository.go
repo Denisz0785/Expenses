@@ -56,6 +56,17 @@ func (r *ExpenseRepo) GetTypesExpenseUser(ctx context.Context, d *dto.TypesExpen
 	return expense, nil
 }
 
+func (r *ExpenseRepo) GetUserId(ctx context.Context, expenseID int) (int, error) {
+	var userId int
+	query := fmt.Sprintf("SELECT et.users_id from expense_type et join expense e on et.id=e.expense_type_id where e.id=%v;", expenseID)
+	err := r.conn.QueryRow(ctx, query).Scan(&userId)
+	if err != nil {
+		fmt.Println(err.Error())
+		return 0, err
+	}
+	return userId, nil
+}
+
 // IsExpenseTypeExists checking exist type of expense or not in a database
 func (r *ExpenseRepo) IsExpenseTypeExists(ctx context.Context, expType *string) (bool, error) {
 	rows, _ := r.conn.Query(ctx, "Select title from expense_type")
@@ -74,6 +85,17 @@ func (r *ExpenseRepo) IsExpenseTypeExists(ctx context.Context, expType *string) 
 		existExpType = false
 	}
 	return existExpType, nil
+}
+
+func (r *ExpenseRepo) IsExpenseExists(ctx context.Context, expenseID int) (bool, error) {
+	existExpense := false
+
+	err := r.conn.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM expense WHERE id=$1);", expenseID).Scan(&existExpense)
+	if err != nil {
+		fmt.Println(err.Error())
+		return existExpense, err
+	}
+	return existExpense, nil
 }
 
 // CreateExpenseType insert a new type of expenses in a table expense_type
@@ -110,10 +132,10 @@ func (r *ExpenseRepo) SetExpenseTimeAndSpent(ctx context.Context, tx pgx.Tx, exp
 
 func (r *ExpenseRepo) AddFileExpense(ctx context.Context, filepath string, expId int) error {
 	var typeFile string
-	str := strings.Split(filepath, ".")
-	if len(str) == 2 {
-		extensionFile := strings.ToLower(str[1])
-		switch extensionFile {
+	src := strings.Split(filepath, ".")
+	if len(src) == 2 {
+		extension := strings.ToLower(src[1])
+		switch extension {
 		case "doc", "pdf", "txt":
 			typeFile = "document"
 		case "jpg", "jpeg", "png", "gif", "raw", "svg", "bmp", "ico", "tiff", "webp":
