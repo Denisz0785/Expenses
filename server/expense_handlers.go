@@ -60,23 +60,16 @@ func (r *Server) GetExpenseHandler(w http.ResponseWriter, req *http.Request) {
 
 func (r *Server) UploadFile(w http.ResponseWriter, req *http.Request) {
 	ctx := context.Background()
-	var nameNewFile string
-	var expenseID int
+	var newFileName string
 	var userId int
-	if expIdString := req.FormValue("id"); expIdString != "" {
-		var err error
-		expenseID, err = strconv.Atoi(expIdString)
-		if err != nil {
-			http.Error(w, "Incorrect id of expense", http.StatusBadRequest)
-			return
-		}
-		exist, err := r.repo.IsExpenseExists(ctx, expenseID)
-		if err != nil || !exist {
-			http.Error(w, "Incorrect id of expense", http.StatusBadRequest)
-			return
-		}
-	} else {
-		http.Error(w, "incorrect id of expense", http.StatusBadRequest)
+	expenseID, err := validateIdExpense(req.FormValue("id"))
+	if err != nil {
+		http.Error(w, "Incorrect id of expense", http.StatusBadRequest)
+		return
+	}
+	exist, err := r.repo.IsExpenseExists(ctx, expenseID)
+	if err != nil || !exist {
+		http.Error(w, "Incorrect id of expense", http.StatusBadRequest)
 		return
 	}
 
@@ -86,6 +79,7 @@ func (r *Server) UploadFile(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Print("error of getting path", err)
 	}
+
 	path := fmt.Sprint(workDir + "/files/" + userIdSring)
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -97,16 +91,14 @@ func (r *Server) UploadFile(w http.ResponseWriter, req *http.Request) {
 
 	file, header, err := req.FormFile("files")
 	if err != nil {
-
 		http.Error(w, "incorrect file's name", http.StatusInternalServerError)
 		return
 	} else {
 		src := strings.Split(header.Filename, ".")
 		if len(src) == 2 {
 			pattern := fmt.Sprint(src[0] + "-*." + src[1])
-
 			newFile, err := os.CreateTemp(path, pattern)
-			nameNewFile = newFile.Name()
+			newFileName = filepath.Base(newFile.Name())
 			if err == nil {
 				io.Copy(newFile, file)
 			} else {
@@ -120,12 +112,12 @@ func (r *Server) UploadFile(w http.ResponseWriter, req *http.Request) {
 
 	}
 	defer file.Close()
-	filePath, _ := filepath.Abs(nameNewFile)
-	err = r.repo.AddFileExpense(ctx, filePath, expenseID)
+
+	err = r.repo.AddFileExpense(ctx, newFileName, expenseID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	fmt.Fprintf(w, "file added. File name is:%s", filepath.Base(nameNewFile))
+	fmt.Fprintf(w, "file added. File name is:%s", newFileName)
 }
 
 func (r *Server) DeleteFile(w http.ResponseWriter, req *http.Request) {
@@ -138,21 +130,14 @@ func (r *Server) DeleteFile(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "incorrect name of the file", http.StatusBadRequest)
 		return
 	}
-
-	if expIdString := req.FormValue("id"); expIdString != "" {
-		var err error
-		expenseID, err = strconv.Atoi(expIdString)
-		if err != nil {
-			http.Error(w, "Incorrect id of expense", http.StatusBadRequest)
-			return
-		}
-		exist, err := r.repo.IsExpenseExists(ctx, expenseID)
-		if err != nil || !exist {
-			http.Error(w, "Incorrect id of expense", http.StatusBadRequest)
-			return
-		}
-	} else {
-		http.Error(w, "incorrect id of expense", http.StatusBadRequest)
+	expenseID, err := validateIdExpense(req.FormValue("id"))
+	if err != nil {
+		http.Error(w, "Incorrect id of expense", http.StatusBadRequest)
+		return
+	}
+	exist, err := r.repo.IsExpenseExists(ctx, expenseID)
+	if err != nil || !exist {
+		http.Error(w, "Incorrect id of expense", http.StatusBadRequest)
 		return
 	}
 
@@ -163,9 +148,7 @@ func (r *Server) DeleteFile(w http.ResponseWriter, req *http.Request) {
 		log.Print("error of getting path", err)
 	}
 	path := fmt.Sprint(workDir + "/files/" + userIdSring + "/" + nameFile)
-
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-
 		http.Error(w, "file not found. Check name of the file", http.StatusBadRequest)
 		return
 	}
@@ -174,7 +157,7 @@ func (r *Server) DeleteFile(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "error of deleting file on disk", http.StatusInternalServerError)
 		return
 	}
-	err = r.repo.DeleteFile(ctx, path, expenseID)
+	err = r.repo.DeleteFile(ctx, nameFile, expenseID)
 	if err != nil {
 		http.Error(w, "error of deleting file", http.StatusInternalServerError)
 		return
