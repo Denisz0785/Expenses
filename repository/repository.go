@@ -225,3 +225,13 @@ func ConnectToDB(ctx context.Context, myurl string) (*pgx.Conn, error) {
 	}
 	return conn, nil
 }
+
+func (r *ExpenseRepo) DeleteFile(ctx context.Context, pathFile string, expenseId int) error {
+	query := fmt.Sprintf("DELETE FROM files WHERE path_file='%v' AND expense_id=%v;", pathFile, expenseId)
+
+	_, err := r.conn.Exec(ctx, query)
+	if err != nil {
+		return err
+	}
+	return nil
+}

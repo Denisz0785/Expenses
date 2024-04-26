@@ -67,12 +67,12 @@ func (r *Server) UploadFile(w http.ResponseWriter, req *http.Request) {
 		var err error
 		expenseID, err = strconv.Atoi(expIdString)
 		if err != nil {
-			fmt.Fprintf(w, "Incorrect id of expense:%v", err)
+			http.Error(w, "Incorrect id of expense", http.StatusBadRequest)
 			return
 		}
 		exist, err := r.repo.IsExpenseExists(ctx, expenseID)
 		if err != nil || !exist {
-			fmt.Fprintf(w, "Incorrect id of expense:%v", err)
+			http.Error(w, "Incorrect id of expense", http.StatusBadRequest)
 			return
 		}
 	} else {
@@ -84,10 +84,10 @@ func (r *Server) UploadFile(w http.ResponseWriter, req *http.Request) {
 	userIdSring := strconv.Itoa(userId)
 	workDir, err := os.Getwd()
 	if err != nil {
-		log.Print("error of gettinh path", err)
+		log.Print("error of getting path", err)
 	}
 	path := fmt.Sprint(workDir + "/files/" + userIdSring)
-	fmt.Println(path)
+
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err = os.Mkdir(path, 0766)
 		if err != nil {
@@ -97,14 +97,10 @@ func (r *Server) UploadFile(w http.ResponseWriter, req *http.Request) {
 
 	file, header, err := req.FormFile("files")
 	if err != nil {
+
 		http.Error(w, "incorrect file's name", http.StatusInternalServerError)
 		return
 	} else {
-		fmt.Fprintf(w, "Name: %v, Size: %v\n", header.Filename, header.Size)
-		for k, v := range header.Header {
-			fmt.Fprintf(w, "Key: %v, Value: %v\n", k, v)
-		}
-
 		src := strings.Split(header.Filename, ".")
 		if len(src) == 2 {
 			pattern := fmt.Sprint(src[0] + "-*." + src[1])
@@ -130,4 +126,58 @@ func (r *Server) UploadFile(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	fmt.Fprintf(w, "file added. File name is:%s", filepath.Base(nameNewFile))
+}
+
+func (r *Server) DeleteFile(w http.ResponseWriter, req *http.Request) {
+	ctx := context.Background()
+	var nameFile string
+	var expenseID int
+	var userId int
+
+	if nameFile = req.FormValue("nameFile"); nameFile == "" {
+		http.Error(w, "incorrect name of the file", http.StatusBadRequest)
+		return
+	}
+
+	if expIdString := req.FormValue("id"); expIdString != "" {
+		var err error
+		expenseID, err = strconv.Atoi(expIdString)
+		if err != nil {
+			http.Error(w, "Incorrect id of expense", http.StatusBadRequest)
+			return
+		}
+		exist, err := r.repo.IsExpenseExists(ctx, expenseID)
+		if err != nil || !exist {
+			http.Error(w, "Incorrect id of expense", http.StatusBadRequest)
+			return
+		}
+	} else {
+		http.Error(w, "incorrect id of expense", http.StatusBadRequest)
+		return
+	}
+
+	userId, _ = r.repo.GetUserId(ctx, expenseID)
+	userIdSring := strconv.Itoa(userId)
+	workDir, err := os.Getwd()
+	if err != nil {
+		log.Print("error of getting path", err)
+	}
+	path := fmt.Sprint(workDir + "/files/" + userIdSring + "/" + nameFile)
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+
+		http.Error(w, "file not found. Check name of the file", http.StatusBadRequest)
+		return
+	}
+	err = os.Remove(path)
+	if err != nil {
+		http.Error(w, "error of deleting file on disk", http.StatusInternalServerError)
+		return
+	}
+	err = r.repo.DeleteFile(ctx, path, expenseID)
+	if err != nil {
+		http.Error(w, "error of deleting file", http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprint(w, "file was deleted")
 }
