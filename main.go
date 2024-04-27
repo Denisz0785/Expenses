@@ -7,7 +7,13 @@ import (
 	"expenses/server"
 	"flag"
 	"fmt"
+	"log"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+
+	"github.com/spf13/viper"
 )
 
 func main() {
@@ -20,7 +26,10 @@ func main() {
 		fmt.Println(err.Error())
 	}
 	defer conn.Close(ctx)
-
+	// initializing config from file
+	if err := initConfig(); err != nil {
+		log.Println("error of initializing configs", err)
+	}
 	// Create new structure wich consist data about connection with database
 	ConnExpRepo := repository.NewExpenseRepo(conn)
 
@@ -57,7 +66,21 @@ func main() {
 		}
 	case strings.EqualFold(*funcPtr, "run_server"):
 		str := server.NewServer(ConnExpRepo)
-		server.Run(str)
+		srv := new(server.Connect)
+		// create signal channel
+		ch := make(chan os.Signal, 1)
+		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+		// run server in a goroutine
+		go func() {
+			srv.Run(str, viper.GetString("port"))
+		}()
+		<-ch
+		log.Println("server shutting down")
+		// Shutdown gracefully shuts down the server without interrupting any active connections
+		if err := srv.Shutdown(ctx); err != nil {
+			log.Println("Error of shutdown server", err)
+		}
+
 	case strings.EqualFold(*funcPtr, "addfile"):
 		err := ConnExpRepo.AddFileExpense(ctx, *fileNamePtr, int(*expId))
 		if err != nil {
@@ -66,5 +89,13 @@ func main() {
 	default:
 		fmt.Println("check your input data in a command-line")
 	}
+
+}
+
+// initConfig initializes configs from file
+func initConfig() error {
+	viper.AddConfigPath("configs")
+	viper.SetConfigName("config")
+	return viper.ReadInConfig()
 
 }
