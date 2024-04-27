@@ -1,3 +1,4 @@
+// Package repository contains methods to work with database
 package repository
 
 import (
@@ -22,14 +23,17 @@ type Repository interface {
 	SetExpenseTimeAndSpent()
 }
 
+// ExpenseRepo create custom struct which contains descriptor of connection to database
 type ExpenseRepo struct {
 	conn *pgx.Conn
 }
 
+// NewExpenseRepo create ExpenseRepo
 func NewExpenseRepo(conn *pgx.Conn) *ExpenseRepo {
 	return &ExpenseRepo{conn: conn}
 }
 
+// GetTypesExpenseUser get types of expenses from database by users's od or name or login
 func (r *ExpenseRepo) GetTypesExpenseUser(ctx context.Context, d *dto.TypesExpenseUserParams) ([]dto.Expenses, error) {
 	if d.Id == 0 && d.Login == "" && d.Name == "" {
 		err := errors.New("can't find info abour User")
@@ -56,6 +60,7 @@ func (r *ExpenseRepo) GetTypesExpenseUser(ctx context.Context, d *dto.TypesExpen
 	return expense, nil
 }
 
+// GetUserId get id of user from database by id of expense
 func (r *ExpenseRepo) GetUserId(ctx context.Context, expenseID int) (int, error) {
 	var userId int
 	query := fmt.Sprintf("SELECT et.users_id from expense_type et join expense e on et.id=e.expense_type_id where e.id=%v;", expenseID)
@@ -87,6 +92,7 @@ func (r *ExpenseRepo) IsExpenseTypeExists(ctx context.Context, expType *string) 
 	return existExpType, nil
 }
 
+// IsExpenseExists checks existing expense in a database by expense's id
 func (r *ExpenseRepo) IsExpenseExists(ctx context.Context, expenseID int) (bool, error) {
 	existExpense := false
 
@@ -130,6 +136,7 @@ func (r *ExpenseRepo) SetExpenseTimeAndSpent(ctx context.Context, tx pgx.Tx, exp
 	return err
 }
 
+// AddFileExpense define type of the file and write info of file to the database
 func (r *ExpenseRepo) AddFileExpense(ctx context.Context, filepath string, expId int) error {
 	var typeFile string
 	src := strings.Split(filepath, ".")
@@ -226,6 +233,7 @@ func ConnectToDB(ctx context.Context, myurl string) (*pgx.Conn, error) {
 	return conn, nil
 }
 
+// DeleteFile removes file from database by name of the file and expense Id
 func (r *ExpenseRepo) DeleteFile(ctx context.Context, pathFile string, expenseId int) error {
 	query := fmt.Sprintf("DELETE FROM files WHERE path_file='%v' AND expense_id=%v;", pathFile, expenseId)
 

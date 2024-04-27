@@ -5,6 +5,7 @@ import (
 	"strconv"
 )
 
+// validateIdExpense validate id is not empty and convert id's type string to int
 func validateIdExpense(id string) (int, error) {
 	var expenseID int
 	var err error

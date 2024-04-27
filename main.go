@@ -35,7 +35,7 @@ func main() {
 	fileNamePtr := flag.String("name_file", "none", "name of file")
 	expId := flag.Float64("exp_id", 0.0, "id of expenses")
 
-	//Parse() parses the command line into the defined flags
+	//Parse parses the command line into the defined flags
 	flag.Parse()
 
 	// define which command was input
@@ -50,7 +50,7 @@ func main() {
 		fmt.Printf("Expenses_type of %v = %v\n", user.Name, resultExpenses)
 
 	case strings.EqualFold(*funcPtr, "add"):
-		//
+
 		err := ConnExpRepo.CreateUserExpense(ctx, loginPtr, expTypePtr, timePtr, spentPtr)
 		if err != nil {
 			fmt.Println(err.Error())
