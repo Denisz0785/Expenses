@@ -35,6 +35,7 @@ func (r *Server) GetExpenseHandler(w http.ResponseWriter, req *http.Request) {
 			id, err := strconv.Atoi(checkId)
 			if err != nil {
 				fmt.Fprintf(w, "Uncorrect value of id%v", err)
+				return
 			}
 			user.Id = id
 		}
@@ -65,7 +66,7 @@ func (r *Server) GetExpenseHandler(w http.ResponseWriter, req *http.Request) {
 // UploadFile uploads file from user, write it to storage of server and write name of the file to database
 func (r *Server) UploadFile(w http.ResponseWriter, req *http.Request) {
 	ctx := context.Background()
-	var newFileName string
+	var newFileName, typeFile string
 	var userId int
 	//check that expense's id from request exists in a database
 	expenseID, err := validateIdExpense(req.FormValue("id"))
@@ -86,15 +87,7 @@ func (r *Server) UploadFile(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		log.Print("error of getting path", err)
 	}
-	//create path to save the file to server storage
-	path := fmt.Sprint(workDir + "/files/" + userIdSring)
-	//check of existing folder with this path, if not exists create a new one
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err = os.Mkdir(path, 0766)
-		if err != nil {
-			log.Print("error of creating new directory", err)
-		}
-	}
+
 	//get file info from requests
 	file, header, err := req.FormFile("files")
 	if err != nil {
@@ -104,6 +97,29 @@ func (r *Server) UploadFile(w http.ResponseWriter, req *http.Request) {
 		src := strings.Split(header.Filename, ".")
 		//check name of file has extension and create a new file with random characters appended to the name
 		if len(src) == 2 {
+			extension := strings.ToLower(src[1])
+			switch extension {
+			case "doc", "pdf", "txt":
+				typeFile = "document"
+			case "jpg", "jpeg", "png", "gif", "raw", "svg", "bmp", "ico", "tiff", "webp":
+				typeFile = "image"
+			case "mp4", "webm", "mov", "avi", "flv", "wmv", "mkv", "mpeg", "3gp", "ogv":
+				typeFile = "video"
+			default:
+				fmt.Fprintln(w, "incorrect file's type")
+				return
+			}
+
+			//create path to save the file to server storage
+			path := fmt.Sprint(workDir + "/files/" + userIdSring)
+			//check of existing folder with this path, if not exists create a new one
+			if _, err := os.Stat(path); os.IsNotExist(err) {
+				err = os.Mkdir(path, 0766)
+				if err != nil {
+					log.Print("error of creating new directory", err)
+				}
+			}
+
 			pattern := fmt.Sprint(src[0] + "-*." + src[1])
 			newFile, err := os.CreateTemp(path, pattern)
 			//newFileName save a new name of the file
@@ -123,7 +139,7 @@ func (r *Server) UploadFile(w http.ResponseWriter, req *http.Request) {
 	}
 	defer file.Close()
 	//AddFileExpense write info about file to the database
-	err = r.repo.AddFileExpense(ctx, newFileName, expenseID)
+	err = r.repo.AddFileExpense(ctx, newFileName, expenseID, typeFile)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

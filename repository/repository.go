@@ -7,7 +7,6 @@ import (
 	dto "expenses/dto_expenses"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -39,17 +38,18 @@ func (r *ExpenseRepo) GetTypesExpenseUser(ctx context.Context, d *dto.TypesExpen
 		err := errors.New("can't find info abour User")
 		return nil, err
 	}
-
 	var query string
+	pattern1 := "SELECT e.title, e.id from expense_type e"
+	pattern2 := ",users where e.users_id=users.id and users."
 
 	if d.Id != 0 {
-		query = fmt.Sprintf("SELECT id, title from expense_type where expense_type.users_id=%d", d.Id)
+		query = fmt.Sprintf(pattern1+" where e.users_id=%d", d.Id)
 
 	} else if d.Login != "" {
-		query = fmt.Sprintf("SELECT e.title, e.id from expense_type e, users where e.users_id=users.id and users.login=%s", d.Login)
+		query = fmt.Sprintf(pattern1+pattern2+"login=%s", d.Login)
 
 	} else if d.Name != "" {
-		query = fmt.Sprintf("SELECT e.title, e.id from expense_type e, users where e.users_id=users.id and users.name=%s", d.Name)
+		query = fmt.Sprintf(pattern1+pattern2+"name=%s", d.Name)
 	}
 	rows, _ := r.conn.Query(ctx, query)
 	expense, err := pgx.CollectRows(rows, pgx.RowToStructByName[dto.Expenses])
@@ -137,27 +137,35 @@ func (r *ExpenseRepo) SetExpenseTimeAndSpent(ctx context.Context, tx pgx.Tx, exp
 }
 
 // AddFileExpense define type of the file and write info of file to the database
-func (r *ExpenseRepo) AddFileExpense(ctx context.Context, filepath string, expId int) error {
-	var typeFile string
-	src := strings.Split(filepath, ".")
-	if len(src) == 2 {
-		extension := strings.ToLower(src[1])
-		switch extension {
-		case "doc", "pdf", "txt":
-			typeFile = "document"
-		case "jpg", "jpeg", "png", "gif", "raw", "svg", "bmp", "ico", "tiff", "webp":
-			typeFile = "image"
-		case "mp4", "webm", "mov", "avi", "flv", "wmv", "mkv", "mpeg", "3gp", "ogv":
-			typeFile = "video"
-		default:
-			return errors.New("формат сохраняемого файла не поддерживается")
-		}
-	}
-	query := "INSERT INTO files (expense_id,path_file, type_file) VALUES ($1,$2,$3)"
-	_, err := r.conn.Exec(ctx, query, expId, filepath, typeFile)
+func (r *ExpenseRepo) AddFileExpense(ctx context.Context, filepath string, expId int, typeFile string) error {
+	// begin transaction
+	tx, err := r.conn.Begin(ctx)
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback(ctx)
+
+	//check that expense's Id exist in a database
+	exist, err := r.IsExpenseExists(ctx, expId)
+	if err != nil || !exist {
+		if err != nil {
+			return err
+		} else {
+			return fmt.Errorf("expense with ID=%d not found", expId)
+		}
+	}
+
+	query := "INSERT INTO files (expense_id,path_file, type_file) VALUES ($1,$2,$3)"
+	_, err = tx.Exec(ctx, query, expId, filepath, typeFile)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
