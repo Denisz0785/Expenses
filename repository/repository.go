@@ -138,30 +138,9 @@ func (r *ExpenseRepo) SetExpenseTimeAndSpent(ctx context.Context, tx pgx.Tx, exp
 
 // AddFileExpense define type of the file and write info of file to the database
 func (r *ExpenseRepo) AddFileExpense(ctx context.Context, filepath string, expId int, typeFile string) error {
-	// begin transaction
-	tx, err := r.conn.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(ctx)
-
-	//check that expense's Id exist in a database
-	exist, err := r.IsExpenseExists(ctx, expId)
-	if err != nil || !exist {
-		if err != nil {
-			return err
-		} else {
-			return fmt.Errorf("expense with ID=%d not found", expId)
-		}
-	}
 
 	query := "INSERT INTO files (expense_id,path_file, type_file) VALUES ($1,$2,$3)"
-	_, err = tx.Exec(ctx, query, expId, filepath, typeFile)
-	if err != nil {
-		return err
-	}
-
-	err = tx.Commit(ctx)
+	_, err := r.conn.Exec(ctx, query, expId, filepath, typeFile)
 	if err != nil {
 		return err
 	}
