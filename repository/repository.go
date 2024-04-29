@@ -39,19 +39,20 @@ func (r *ExpenseRepo) GetTypesExpenseUser(ctx context.Context, d *dto.TypesExpen
 		return nil, err
 	}
 	var query string
-	pattern1 := "SELECT e.title, e.id from expense_type e"
-	pattern2 := ",users where e.users_id=users.id and users."
-
+	sql := "SELECT e.title, e.id from expense_type e"
+	sqlWhere := ",users where e.users_id=users.id and users."
+	var param interface{}
 	if d.Id != 0 {
-		query = fmt.Sprintf(pattern1+" where e.users_id=%d", d.Id)
-
+		query = fmt.Sprint(sql + " where e.users_id=$1")
+		param = d.Id
 	} else if d.Login != "" {
-		query = fmt.Sprintf(pattern1+pattern2+"login=%s", d.Login)
-
+		query = fmt.Sprint(sql + sqlWhere + "login=$1")
+		param = d.Login
 	} else if d.Name != "" {
-		query = fmt.Sprintf(pattern1+pattern2+"name=%s", d.Name)
+		query = fmt.Sprint(sql + sqlWhere + "name=$1")
+		param = d.Name
 	}
-	rows, _ := r.conn.Query(ctx, query)
+	rows, _ := r.conn.Query(ctx, query, param)
 	expense, err := pgx.CollectRows(rows, pgx.RowToStructByName[dto.Expenses])
 	if err != nil {
 		err = fmt.Errorf("unable to connect to database: %v", err)
@@ -202,12 +203,7 @@ func (r *ExpenseRepo) CreateUserExpense(ctx context.Context, login *string, expT
 		}
 
 	}
-
-	err = tx.Commit(ctx)
-	if err != nil {
-		return err
-	}
-	return err
+	return tx.Commit(ctx)
 }
 
 // ConnectToDB connects to DB
