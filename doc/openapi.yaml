@@ -1,0 +1,60 @@
+openapi: 3.0.0
+info:
+  title: File Upload API
+  version: 1.0.0
+paths:
+  /expense/upload/:
+    post:
+      summary: Загрузка файла
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Файл для загрузки (doc, pdf, txt)
+                expenseID:
+                  type: integer
+                  description: Идентификатор расхода
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '400':
+          description: Неверный запрос
+components:
+  schemas:
+    Expense:
+      type: object
+      properties:
+        nameFile:
+          type: string
+          example: "check-tr5632f8.txt" 
+  /expense/delete/:
+    delete:
+      summary: Удаление файла
+      parameters:
+        - in: query
+          name: expenseID
+          required: true
+          schema:
+            type: integer
+            description: Идентификатор расхода
+        - in: query
+          name: nameFile
+          required: true
+          schema:
+            type: string
+            description: Имя файла для удаления
+      responses:
+        '200':
+          description: Файл удалён
+        '400':
+          description: Неверный запрос

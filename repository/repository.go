@@ -1,14 +1,18 @@
+// Package repository contains methods to work with database
 package repository
 
 import (
 	"context"
+	"errors"
+	dto "expenses/dto_expenses"
 	"fmt"
 	"os"
 
 	"github.com/jackc/pgx/v5"
 )
 
-type repository interface {
+type Repository interface {
+	GetTypesExpenseUser()
 	GetExpenseType()
 	CreateValuesDB()
 	GetUserExpenseTypes()
@@ -18,34 +22,55 @@ type repository interface {
 	SetExpenseTimeAndSpent()
 }
 
+// ExpenseRepo create custom struct which contains descriptor of connection to database
 type ExpenseRepo struct {
 	conn *pgx.Conn
 }
 
+// NewExpenseRepo create ExpenseRepo
 func NewExpenseRepo(conn *pgx.Conn) *ExpenseRepo {
 	return &ExpenseRepo{conn: conn}
 }
 
-// GetUserExpenseTypes gets all rows of type of expenses from DB by name
-func (r *ExpenseRepo) GetUserExpenseTypes(ctx context.Context, name string) ([]string, error) {
-	rows, _ := r.conn.Query(ctx, "SELECT title from expense_type, users where expense_type.users_id=users.id and users.name=$1", name)
-	numbers, err := pgx.CollectRows(rows, pgx.RowTo[string])
+// GetTypesExpenseUser get types of expenses from database by users's od or name or login
+func (r *ExpenseRepo) GetTypesExpenseUser(ctx context.Context, d *dto.TypesExpenseUserParams) ([]dto.Expenses, error) {
+	if d.Id == 0 && d.Login == "" && d.Name == "" {
+		err := errors.New("can't find info abour User")
+		return nil, err
+	}
+	var query string
+	sql := "SELECT e.title, e.id from expense_type e"
+	sqlWhere := ",users where e.users_id=users.id and users."
+	var param interface{}
+	if d.Id != 0 {
+		query = fmt.Sprint(sql + " where e.users_id=$1")
+		param = d.Id
+	} else if d.Login != "" {
+		query = fmt.Sprint(sql + sqlWhere + "login=$1")
+		param = d.Login
+	} else if d.Name != "" {
+		query = fmt.Sprint(sql + sqlWhere + "name=$1")
+		param = d.Name
+	}
+	rows, _ := r.conn.Query(ctx, query, param)
+	expense, err := pgx.CollectRows(rows, pgx.RowToStructByName[dto.Expenses])
 	if err != nil {
 		err = fmt.Errorf("unable to connect to database: %v", err)
 		return nil, err
 	}
-	return numbers, nil
+	return expense, nil
 }
 
-// GetManyRows gets all rows of type of expenses from DB by login
-func (r *ExpenseRepo) GetExpenseTypesUser(ctx context.Context, login string) ([]string, error) {
-	rows, _ := r.conn.Query(ctx, "SELECT title from expense_type, users where expense_type.users_id=users.id and users.login=$1", login)
-	numbers, err := pgx.CollectRows(rows, pgx.RowTo[string])
+// GetUserId get id of user from database by id of expense
+func (r *ExpenseRepo) GetUserId(ctx context.Context, expenseID int) (int, error) {
+	var userId int
+	query := fmt.Sprintf("SELECT et.users_id from expense_type et join expense e on et.id=e.expense_type_id where e.id=%v;", expenseID)
+	err := r.conn.QueryRow(ctx, query).Scan(&userId)
 	if err != nil {
-		err = fmt.Errorf("unable to connect to database: %v", err)
-		return nil, err
+		fmt.Println(err.Error())
+		return 0, err
 	}
-	return numbers, nil
+	return userId, nil
 }
 
 // IsExpenseTypeExists checking exist type of expense or not in a database
@@ -66,6 +91,18 @@ func (r *ExpenseRepo) IsExpenseTypeExists(ctx context.Context, expType *string) 
 		existExpType = false
 	}
 	return existExpType, nil
+}
+
+// IsExpenseExists checks existing expense in a database by expense's id
+func (r *ExpenseRepo) IsExpenseExists(ctx context.Context, expenseID int) (bool, error) {
+	existExpense := false
+
+	err := r.conn.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM expense WHERE id=$1);", expenseID).Scan(&existExpense)
+	if err != nil {
+		fmt.Println(err.Error())
+		return existExpense, err
+	}
+	return existExpense, nil
 }
 
 // CreateExpenseType insert a new type of expenses in a table expense_type
@@ -96,8 +133,20 @@ func (r *ExpenseRepo) SetExpenseTimeAndSpent(ctx context.Context, tx pgx.Tx, exp
 	if err != nil {
 		return err
 	}
-	fmt.Println("was Createed")
+	fmt.Println("was Created")
 	return err
+}
+
+// AddFileExpense define type of the file and write info of file to the database
+func (r *ExpenseRepo) AddFileExpense(ctx context.Context, filepath string, expId int, typeFile string) error {
+
+	query := "INSERT INTO files (expense_id,path_file, type_file) VALUES ($1,$2,$3)"
+	_, err := r.conn.Exec(ctx, query, expId, filepath, typeFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CreateUserExpense checks existing type of expenses from command-line in a table, and Creates new row to expense table by transaction
@@ -154,12 +203,7 @@ func (r *ExpenseRepo) CreateUserExpense(ctx context.Context, login *string, expT
 		}
 
 	}
-
-	err = tx.Commit(ctx)
-	if err != nil {
-		return err
-	}
-	return err
+	return tx.Commit(ctx)
 }
 
 // ConnectToDB connects to DB
@@ -170,4 +214,15 @@ func ConnectToDB(ctx context.Context, myurl string) (*pgx.Conn, error) {
 		return nil, err
 	}
 	return conn, nil
+}
+
+// DeleteFile removes file from database by name of the file and expense Id
+func (r *ExpenseRepo) DeleteFile(ctx context.Context, pathFile string, expenseId int) error {
+	query := fmt.Sprintf("DELETE FROM files WHERE path_file='%v' AND expense_id=%v;", pathFile, expenseId)
+
+	_, err := r.conn.Exec(ctx, query)
+	if err != nil {
+		return err
+	}
+	return nil
 }
