@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS files;
+DROP TABLE IF EXISTS expense;
+DROP TABLE IF EXISTS expense_type;
+DROP TABLE IF EXISTS users;
+
+
+
+
