@@ -208,6 +208,7 @@ func (r *ExpenseRepo) CreateUserExpense(ctx context.Context, login *string, expT
 
 // ConnectToDB connects to DB
 func ConnectToDB(ctx context.Context, myurl string) (*pgx.Conn, error) {
+	fmt.Println(os.Getenv(myurl))
 	conn, err := pgx.Connect(ctx, os.Getenv(myurl))
 	if err != nil {
 		err = fmt.Errorf("unable to connect to database: %v", err)

@@ -2,25 +2,26 @@ version: '3.8'
 services:
   app1:
     build: ./
-    command: ./expenses
+   
     ports:
-      - 8080:8080
+      - 8000:8080
     depends_on: 
       - db
     environment:
-      - MYURL=postgres://expense_user:zorro@db:5432/expenses
+      - MYURL1=postgres://expense_user:zorro@db:5432/expenses?sslmode=disable
       - DB_PASSWORD=zorro
+    
 
 
   db:
     image: postgres:latest
-    restart: unless-stopped
+    restart: always
     environment:
       - POSTGRES_PASSWORD=zorro
+      - POSTGRES_USER=expense_user
+      - POSTGRES_DB=expenses
+
     ports:
       - 5436:5432  
     volumes:
-      - expense:/var/lib/postgresql/data
-
-volumes:
-  expense:
+      - /home/denis/projects/expense_db:/var/lib/postgresql/data

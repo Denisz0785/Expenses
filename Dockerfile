@@ -1,10 +1,9 @@
 FROM golang:1.22
-RUN go version
-ENV GOPATH=/
+WORKDIR /app1
+ADD go.mod .
+COPY . .
+RUN go build -o main main.go
 
-COPY ./ ./
 
-RUN go mod download
-RUN go build -o expenses ./main.go
 
-CMD ["./expenses"]
+CMD [ "/app1/main" ]
