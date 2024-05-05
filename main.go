@@ -4,7 +4,6 @@ import (
 	"context"
 	"expenses/repository"
 	"expenses/server"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -14,18 +13,27 @@ import (
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	file, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err == nil {
+		log.SetOutput(file)
+	} else {
+		log.Println("Не удалось открыть файл логов, используется стандартный stderr")
+	}
+	defer file.Close()
 
 	// ConnectToDB connects to DB
-	myUrl1 := "MYURL1"
+	myUrl := "MYURL"
 	ctx := context.Background()
-	conn, err := repository.ConnectToDB(ctx, myUrl1)
+	conn, err := repository.ConnectToDB(ctx, myUrl)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatalf("error connect DB:%s", err.Error())
+
 	}
 	defer conn.Close(ctx)
 	// initializing config from file
 	if err := initConfig(); err != nil {
-		log.Println("error of initializing configs", err)
+		log.Fatalf("error of initializing configs:%s", err.Error())
 	}
 	// Create new structure wich consist data about connection with database
 	ConnExpRepo := repository.NewExpenseRepo(conn)
@@ -73,13 +81,15 @@ func main() {
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	// run server in a goroutine
 	go func() {
-		srv.Run(str, viper.GetString("port"))
+		if err := srv.Run(str.InitRoutes(), viper.GetString("port")); err != nil {
+			log.Fatalf("error run server: %s", err.Error())
+		}
 	}()
 	<-ch
 	log.Println("server shutting down")
 	// Shutdown gracefully shuts down the server without interrupting any active connections
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Println("Error of shutdown server", err)
+		log.Printf("Error of shutdown server:%s", err.Error())
 		/*	}
 
 			default:

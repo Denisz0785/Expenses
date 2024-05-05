@@ -35,7 +35,7 @@ func NewExpenseRepo(conn *pgx.Conn) *ExpenseRepo {
 // GetTypesExpenseUser get types of expenses from database by users's od or name or login
 func (r *ExpenseRepo) GetTypesExpenseUser(ctx context.Context, d *dto.TypesExpenseUserParams) ([]dto.Expenses, error) {
 	if d.Id == 0 && d.Login == "" && d.Name == "" {
-		err := errors.New("can't find info abour User")
+		err := errors.New("incorrect user data")
 		return nil, err
 	}
 	var query string
@@ -52,6 +52,7 @@ func (r *ExpenseRepo) GetTypesExpenseUser(ctx context.Context, d *dto.TypesExpen
 		query = fmt.Sprint(sql + sqlWhere + "name=$1")
 		param = d.Name
 	}
+
 	rows, _ := r.conn.Query(ctx, query, param)
 	expense, err := pgx.CollectRows(rows, pgx.RowToStructByName[dto.Expenses])
 	if err != nil {
