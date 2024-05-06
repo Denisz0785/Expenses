@@ -18,9 +18,9 @@ func (s *Server) InitRoutes() *gin.Engine {
 	auth := router.Group("/auth")
 	{
 		auth.POST("/sign-up", s.signUp)
-		//		auth.POST("/sign-in", s.signIn)
+		auth.POST("/sign-in", s.signIn)
 	}
-	api := router.Group("/api") //s.userIdentity
+	api := router.Group("/api", s.userIdentity)
 	{
 		expenses := api.Group("/expenses")
 		{
@@ -37,7 +37,6 @@ func (s *Server) InitRoutes() *gin.Engine {
 
 // Run create router and run a server
 func (c *Connect) Run(handler http.Handler, port string) error {
-	//mux := http.NewServeMux()
 	c.httpServer = &http.Server{
 		Addr:           ":" + port,
 		Handler:        handler,
@@ -45,9 +44,6 @@ func (c *Connect) Run(handler http.Handler, port string) error {
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 	}
-	//mux.HandleFunc("/expense/list/", r.GetExpenseHandler)
-	//mux.HandleFunc("/expense/upload/", r.UploadFile)
-	//mux.HandleFunc("/expense/delete/", r.DeleteFile)
 	return c.httpServer.ListenAndServe()
 }
 
