@@ -1,3 +1,4 @@
+// main package of project
 package main
 
 import (
@@ -23,9 +24,9 @@ func main() {
 	defer file.Close()
 
 	// ConnectToDB connects to DB
-	myUrl := "MYURL"
+	myURL := "MYURL"
 	ctx := context.Background()
-	conn, err := repository.ConnectToDB(ctx, myUrl)
+	conn, err := repository.ConnectToDB(ctx, myURL)
 	if err != nil {
 		log.Fatalf("error connect DB:%s", err.Error())
 

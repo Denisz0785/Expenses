@@ -3,7 +3,6 @@ package repository
 
 import (
 	"context"
-	"errors"
 	dto "expenses/dto_expenses"
 	"fmt"
 	"os"
@@ -33,27 +32,31 @@ func NewExpenseRepo(conn *pgx.Conn) *ExpenseRepo {
 }
 
 // GetTypesExpenseUser get types of expenses from database by users's od or name or login
-func (r *ExpenseRepo) GetTypesExpenseUser(ctx context.Context, d *dto.TypesExpenseUserParams) ([]dto.Expenses, error) {
-	if d.Id == 0 && d.Login == "" && d.Name == "" {
-		err := errors.New("incorrect user data")
-		return nil, err
-	}
+func (r *ExpenseRepo) GetTypesExpenseUser(ctx context.Context, userId int) ([]dto.Expenses, error) {
 	var query string
-	sql := "SELECT e.title, e.id from expense_type e"
-	sqlWhere := ",users where e.users_id=users.id and users."
-	var param interface{}
-	if d.Id != 0 {
-		query = fmt.Sprint(sql + " where e.users_id=$1")
-		param = d.Id
-	} else if d.Login != "" {
-		query = fmt.Sprint(sql + sqlWhere + "login=$1")
-		param = d.Login
-	} else if d.Name != "" {
-		query = fmt.Sprint(sql + sqlWhere + "name=$1")
-		param = d.Name
-	}
+	query = fmt.Sprint("SELECT title, id from expense_type where users_id=$1")
+	/*
+		if d.Id == 0 && d.Login == "" && d.Name == "" {
+			err := errors.New("incorrect user data")
+			return nil, err
+		}
 
-	rows, _ := r.conn.Query(ctx, query, param)
+		sql := "SELECT e.title, e.id from expense_type e"
+		sqlWhere := ",users where e.users_id=users.id and users."
+		var param interface{}
+		if d.Id != 0 {
+			query = fmt.Sprint(sql + " where e.users_id=$1")
+			param = d.Id
+		} else if d.Login != "" {
+			query = fmt.Sprint(sql + sqlWhere + "login=$1")
+			param = d.Login
+		} else if d.Name != "" {
+			query = fmt.Sprint(sql + sqlWhere + "name=$1")
+			param = d.Name
+		}
+	*/
+
+	rows, _ := r.conn.Query(ctx, query, userId)
 	expense, err := pgx.CollectRows(rows, pgx.RowToStructByName[dto.Expenses])
 	if err != nil {
 		err = fmt.Errorf("unable to connect to database: %v", err)

@@ -1,36 +1,45 @@
 package server
 
 import (
+	"crypto/sha256"
 	"errors"
-	dto "expenses/dto_expenses"
+	"fmt"
+	"github.com/golang-jwt/jwt/v5"
+	"time"
 
 	"github.com/gin-gonic/gin"
-
 	"log"
-	"net/http"
 	"strconv"
 	"strings"
 )
+
+const (
+	salt       = "uiwm67#hdnl4*"
+	tokenTTL   = 12 * time.Hour
+	signingKey = "yei#926&6%hfu*1k&j"
+)
+
+type tokenClaims struct {
+	jwt.RegisteredClaims
+	UserId int `json:"user_id"`
+}
 
 // validateIdExpense validate id is not empty and convert id's type string to int
 func validateIdExpense(id string) (int, error) {
 	var expenseID int
 	var err error
-
 	if id != "" {
 		expenseID, err = strconv.Atoi(id)
-
 		if err != nil {
 			return -1, errors.New("incorrect id")
 		}
 	} else {
 		return -1, errors.New("incorrect id")
 	}
-
 	return expenseID, nil
 }
 
-// checkExtension cheks type of file from request
+// checkExtension checks type file
 func checkExtension(fileName string) (typeFile string, err error) {
 	src := strings.Split(fileName, ".")
 	//check name of file has extension and create a new file with random characters appended to the name
@@ -51,51 +60,67 @@ func checkExtension(fileName string) (typeFile string, err error) {
 	return typeFile, nil
 }
 
-func validateUserData(req *http.Request) (*dto.User, error) {
-	user := dto.User{}
-
-	if name := req.FormValue("name"); name != "" {
-		user.Name = name
-	} else {
-		return nil, errors.New("incorrect name")
+// getUserIdFromContext get user id from context
+func getUserIdFromContext(c *gin.Context) (int, error) {
+	id, ok := c.Get(userCtx)
+	if !ok {
+		log.Println("no user id found")
+		return 0, errors.New("user id not found")
 	}
-
-	if surname := req.FormValue("surname"); surname != "" {
-		user.Surname = surname
-	} else {
-		return nil, errors.New("incorrect surname")
+	idInt, ok := id.(int)
+	if !ok {
+		log.Println("invalid user id type")
+		return 0, errors.New("invalid user id type")
 	}
-
-	if login := req.FormValue("login"); login != "" {
-		user.Login = login
-	} else {
-		return nil, errors.New("incorrect login")
-	}
-
-	if pass := req.FormValue("pass"); pass != "" {
-		user.Pass = pass
-	} else {
-		return nil, errors.New("incorrect pass")
-	}
-
-	if email := req.FormValue("email"); email != "" {
-		user.Email = email
-	} else {
-		return nil, errors.New("incorrect email")
-	}
-	return &user, nil
+	return idInt, nil
 }
 
-func getUserId(c *gin.Context) (userId int, err error) {
-	checkId, ok := c.Get("id")
-	if !ok {
-		log.Println("error get id")
-		return 0, errors.New("incorrect id")
+type errorResponse struct {
+	Message string `json:"message"`
+}
+
+func newErrorResponse(c *gin.Context, statusCode int, message string) {
+	c.AbortWithStatusJSON(statusCode, errorResponse{Message: message})
+}
+
+func hashPassword(pass string) string {
+	hash := sha256.New()
+	hash.Write([]byte(pass))
+	return fmt.Sprintf("%x", hash.Sum([]byte(salt)))
+
+}
+
+func (s *Server) generateToken(name, pass string) (string, error) {
+	user, err := s.repo.GetUser(name, hashPassword(pass))
+	if err != nil {
+		log.Println(err.Error())
+		return "", err
 	}
-	id, ok := checkId.(int)
-	if !ok {
-		log.Println("incorrect type id")
-		return 0, errors.New("incorrect type id")
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
+		jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenTTL)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+		user.Id,
+	})
+	return token.SignedString([]byte(signingKey))
+}
+
+func parseToken(inputToken string) (int, error) {
+	token, err := jwt.ParseWithClaims(inputToken, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			log.Println("unexpected signing method")
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(signingKey), nil
+	})
+	if err != nil {
+		log.Println(err.Error())
+		return -1, err
 	}
-	return id, nil
+	claims, ok := token.Claims.(*tokenClaims)
+	if !ok {
+		return -1, errors.New("invalid token claims")
+	}
+	return claims.UserId, nil
 }

@@ -196,3 +196,24 @@ created by net/http.(*Server).Serve in goroutine 22
 2024/05/05 18:39:09 auth.go:21: error create user:ERROR: value too long for type character varying(50) (SQLSTATE 22001)
 2024/05/05 18:45:45 main.go:89: server shutting down
 2024/05/05 18:45:45 main.go:85: error run server: http: Server closed
+2024/05/06 15:37:07 expense_handlers.go:48: error get type expense:unable to connect to database: ERROR: missing FROM-clause entry for table "e" (SQLSTATE 42P01)
+2024/05/06 15:39:05 main.go:89: server shutting down
+2024/05/06 15:39:05 main.go:85: error run server: http: Server closed
+2024/05/06 15:39:53 main.go:89: server shutting down
+2024/05/06 15:39:53 main.go:85: error run server: http: Server closed
+2024/05/06 17:33:41 utils.go:122: empty auth header
+2024/05/06 17:34:08 utils.go:122: incorrect name file
+2024/05/06 17:35:00 utils.go:61: incorrect file's type
+2024/05/06 17:35:00 utils.go:122: incorrect file type:incorrect file type
+2024/05/06 17:49:37 main.go:90: server shutting down
+2024/05/06 17:49:37 main.go:86: error run server: http: Server closed
+2024/05/06 17:50:07 utils.go:58: incorrect file's type
+2024/05/06 17:50:07 expense_handlers.go:117: incorrect file type
+2024/05/06 18:02:17 auth.go:21: incorrect user data:invalid character 'B' looking for beginning of value
+2024/05/06 18:02:37 auth.go:21: incorrect user data:json: cannot unmarshal number into Go struct field User.name of type string
+2024/05/06 18:02:49 main.go:90: server shutting down
+2024/05/06 18:02:49 main.go:86: error run server: http: Server closed
+2024/05/06 18:04:05 main.go:90: server shutting down
+2024/05/06 18:04:05 main.go:86: error run server: http: Server closed
+2024/05/06 18:22:58 main.go:90: server shutting down
+2024/05/06 18:22:58 main.go:86: error run server: http: Server closed

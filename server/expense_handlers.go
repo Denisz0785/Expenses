@@ -3,7 +3,6 @@ package server
 
 import (
 	"context"
-	dto "expenses/dto_expenses"
 	"expenses/repository"
 	"fmt"
 	"io"
@@ -30,19 +29,25 @@ func NewServer(c *repository.ExpenseRepo) *Server {
 // GetExpenseHandler for get all types of expenses by user's id or login or name
 func (r *Server) GetExpenseHandler(c *gin.Context) {
 	ctx := context.Background()
-	user := &dto.TypesExpenseUserParams{}
-
-	if err := c.BindJSON(user); err != nil {
-		log.Printf("error get user data:%s", err.Error())
-		c.JSON(http.StatusBadRequest, "incorrect user data")
+	/*
+		user := &dto.TypesExpenseUserParams{}
+		if err := c.BindJSON(user); err != nil {
+			log.Printf("error get user data:%s", err.Error())
+			c.JSON(http.StatusBadRequest, "incorrect user data")
+			return
+		}
+	*/
+	userId, err := getUserIdFromContext(c)
+	if err != nil {
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	// []titleExpense keep title of expenses of  user
-	titleExpense, err := r.repo.GetTypesExpenseUser(ctx, user)
+	// titleExpense keep title of expenses of  user
+	titleExpense, err := r.repo.GetTypesExpenseUser(ctx, userId)
 	if err != nil {
 		log.Printf("error get type expense:%s", err.Error())
-		c.JSON(http.StatusInternalServerError, "error get type expense")
+		newErrorResponse(c, http.StatusInternalServerError, "error get type expense")
 		return
 	}
 	// send expense type
@@ -56,28 +61,35 @@ func (r *Server) UploadFile(c *gin.Context) {
 	var newFileName, typeFile, absolutePath string
 	var userId int
 	//check that expense's id from request exists in a database
-
 	expenseID, err := validateIdExpense(c.Param("id"))
 
 	if err != nil {
-		log.Printf("error validate id expense:%s", err.Error())
-		c.JSON(http.StatusBadRequest, "incorrect expense Id")
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, "incorrect expense id:"+err.Error())
 		return
 	}
 	//check that expense's Id exist in a database
 	exist, err := r.repo.IsExpenseExists(ctx, expenseID)
 	if err != nil || !exist {
-		log.Printf("error expense existing:%s", err.Error())
-		c.JSON(http.StatusBadRequest, "incorrect expense Id")
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, "incorrect expense id:"+err.Error())
 		return
 	}
-	//get user's Id frm database by expense's id
-	userId, err = r.repo.GetUserId(ctx, expenseID)
+	userId, err = getUserIdFromContext(c)
 	if err != nil {
-		log.Printf("error user existing:%s", err.Error())
-		c.JSON(http.StatusBadRequest, "incorrect user Id")
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
+	/*
+		//get user's Id frm database by expense's id
+		userId, err = r.repo.GetUserId(ctx, expenseID)
+		if err != nil {
+			log.Printf("error user existing:%s", err.Error())
+			c.JSON(http.StatusBadRequest, "incorrect user Id")
+			return
+		}
+	*/
 	userIdSring := strconv.Itoa(userId)
 	workDir, err := os.Getwd()
 	if err != nil {
@@ -88,22 +100,22 @@ func (r *Server) UploadFile(c *gin.Context) {
 	//get file info from requests
 	fileHeader, err := c.FormFile("files")
 	if err != nil {
-		log.Printf("incorrect file name:%s", err.Error())
-		c.JSON(http.StatusBadRequest, "incorrect file name")
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, "incorrect file name:")
 		return
 	} else {
 		file, err := fileHeader.Open()
 		if err != nil {
-			log.Printf("error open file:%s", err.Error())
-			c.JSON(http.StatusBadRequest, "error open file")
+			log.Println(err)
+			newErrorResponse(c, http.StatusBadRequest, "error open file:")
 			return
 		}
 		defer file.Close()
 		fileName := fileHeader.Filename
 		typeFile, err = checkExtension(fileName)
 		if err != nil {
-			log.Printf("incorrect file type:%s", err.Error())
-			c.JSON(http.StatusBadRequest, "incorrect file type")
+			log.Println(err)
+			newErrorResponse(c, http.StatusBadRequest, "incorrect file type:")
 			return
 		}
 
@@ -124,11 +136,11 @@ func (r *Server) UploadFile(c *gin.Context) {
 		newFileName = filepath.Base(absolutePath)
 		if err == nil {
 			//copy file from request to the file of server storage
-			//err = c.SaveUploadedFile(file, newFile.Name())
 			io.Copy(newFile, file)
 		} else {
-			log.Printf("error of copy file:%s", err.Error())
-			c.JSON(http.StatusInternalServerError, "error save file")
+			log.Println(err)
+			newErrorResponse(c, http.StatusInternalServerError, err.Error())
+			return
 		}
 		defer newFile.Close()
 	}
@@ -141,8 +153,8 @@ func (r *Server) UploadFile(c *gin.Context) {
 			log.Printf("delete file error:%v", err1)
 			return
 		}
-		log.Printf("error write filename to db:%s", err.Error())
-		c.JSON(http.StatusInternalServerError, "error save file")
+		log.Println(err)
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, newFileName)
@@ -151,33 +163,39 @@ func (r *Server) UploadFile(c *gin.Context) {
 
 // DeleteFile removes file by name from the server's storage and database
 func (r *Server) DeleteFile(c *gin.Context) {
-
 	var nameFile string
 	var expenseID int
 	var userId int
-	//check that name of file from request is not empty
 
+	//check that name of file from request is not empty
 	nameFile = c.Query("nameFile")
 	if nameFile == "" {
-		log.Printf("incorrect file name:%s", nameFile)
-		c.JSON(http.StatusBadRequest, "incorrect file name")
+		log.Println("incorrect file name")
+		newErrorResponse(c, http.StatusBadRequest, "incorrect file name:")
 		return
 	}
+
 	//check that expense's id from request exists in a database
 	expenseID, err := validateIdExpense(c.Param("id"))
 	if err != nil {
-		log.Printf("incorrect id expense:%s", err.Error())
-		c.JSON(http.StatusBadRequest, "incorrect id expense")
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, "incorrect id expense")
 		return
 	}
 	exist, err := r.repo.IsExpenseExists(c, expenseID)
 	if err != nil || !exist {
-		log.Printf("incorrect id expense:%s", err.Error())
-		c.JSON(http.StatusBadRequest, "incorrect id expense")
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, "incorrect id expense")
+		return
+	}
+	userId, err = getUserIdFromContext(c)
+	if err != nil {
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	//get user id from database by expense's id
-	userId, _ = r.repo.GetUserId(c, expenseID)
+	//userId, _ = r.repo.GetUserId(c, expenseID)
 	userIdSring := strconv.Itoa(userId)
 	workDir, err := os.Getwd()
 	if err != nil {
@@ -186,7 +204,8 @@ func (r *Server) DeleteFile(c *gin.Context) {
 	//create an absolute path of the file by user's id and name of the file
 	path := fmt.Sprint(workDir + "/files/" + userIdSring + "/" + nameFile)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		c.JSON(http.StatusBadRequest, "file not found. Check name of the file")
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, "incorrect name file")
 		return
 	}
 	//remove file from the server storage
@@ -198,8 +217,8 @@ func (r *Server) DeleteFile(c *gin.Context) {
 	//remove file from database
 	err = r.repo.DeleteFile(c, nameFile, expenseID)
 	if err != nil {
-		log.Printf("error delete file:%s", err.Error())
-		c.JSON(http.StatusInternalServerError, "error delete file")
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, "error delete file")
 		return
 	}
 
