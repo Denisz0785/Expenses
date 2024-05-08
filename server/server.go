@@ -24,7 +24,11 @@ func (s *Server) InitRoutes() *gin.Engine {
 	{
 		expenses := api.Group("/expenses")
 		{
-			expenses.GET("/", s.GetExpenseHandler)
+			expenses.GET("/type", s.GetExpenseTypeHandler)
+			expenses.POST("/", s.CreateExpenseHandler)
+			expenses.GET("/", s.GetAllExpensesHandler)
+			expenses.DELETE("/:id", s.DeleteExpenseHandler)
+			expenses.PATCH("/:id", s.UpdateExpenseHandler)
 		}
 		files := api.Group("/files")
 		{

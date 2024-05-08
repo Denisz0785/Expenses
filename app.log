@@ -217,3 +217,89 @@ created by net/http.(*Server).Serve in goroutine 22
 2024/05/06 18:04:05 main.go:86: error run server: http: Server closed
 2024/05/06 18:22:58 main.go:90: server shutting down
 2024/05/06 18:22:58 main.go:86: error run server: http: Server closed
+2024/05/07 11:47:25 utils.go:118: token has invalid claims: token is expired
+2024/05/07 11:47:25 auth.go:82: token has invalid claims: token is expired
+2024/05/07 12:08:15 main.go:90: server shutting down
+2024/05/07 12:08:15 main.go:86: error run server: http: Server closed
+2024/05/07 12:11:28 expense_handlers.go:34: error get user data:Key: 'CreateExpense.SpentMoney' Error:Field validation for 'SpentMoney' failed on the 'required' tag
+2024/05/07 12:12:35 main.go:90: server shutting down
+2024/05/07 12:12:35 main.go:86: error run server: http: Server closed
+2024/05/07 14:20:29 repository.go:246: ERROR: syntax error at or near "expense_type" (SQLSTATE 42601)
+2024/05/07 14:20:29 expense_handlers.go:97: error get expenses:ERROR: syntax error at or near "expense_type" (SQLSTATE 42601)
+2024/05/07 14:24:53 repository.go:246: ERROR: syntax error at or near "expense_type" (SQLSTATE 42601)
+2024/05/07 14:24:53 expense_handlers.go:97: error get expenses:ERROR: syntax error at or near "expense_type" (SQLSTATE 42601)
+2024/05/07 14:34:28 main.go:90: server shutting down
+2024/05/07 14:34:28 main.go:86: error run server: http: Server closed
+2024/05/07 14:34:47 repository.go:251: cannot find field Time in returned row
+2024/05/07 14:34:47 expense_handlers.go:97: error get expenses:cannot find field Time in returned row
+2024/05/07 14:34:48 repository.go:251: cannot find field Time in returned row
+2024/05/07 14:34:48 expense_handlers.go:97: error get expenses:cannot find field Time in returned row
+2024/05/07 14:36:06 main.go:90: server shutting down
+2024/05/07 14:36:06 main.go:86: error run server: http: Server closed
+2024/05/07 14:38:09 repository.go:251: can't scan into dest[2]: cannot scan timestamp (OID 1114) in binary format into *string
+2024/05/07 14:38:09 expense_handlers.go:97: error get expenses:can't scan into dest[2]: cannot scan timestamp (OID 1114) in binary format into *string
+2024/05/07 14:41:46 main.go:90: server shutting down
+2024/05/07 14:41:46 main.go:86: error run server: http: Server closed
+2024/05/07 14:51:45 main.go:90: server shutting down
+2024/05/07 14:51:45 main.go:86: error run server: http: Server closed
+2024/05/07 15:03:26 main.go:90: server shutting down
+2024/05/07 15:03:26 main.go:86: error run server: http: Server closed
+2024/05/07 15:12:38 main.go:90: server shutting down
+2024/05/07 15:12:38 main.go:86: error run server: http: Server closed
+2024/05/07 15:13:59 main.go:90: server shutting down
+2024/05/07 15:13:59 main.go:86: error run server: http: Server closed
+2024/05/07 15:20:52 main.go:90: server shutting down
+2024/05/07 15:20:52 main.go:86: error run server: http: Server closed
+2024/05/07 17:31:07 main.go:90: server shutting down
+2024/05/07 17:31:07 main.go:86: error run server: http: Server closed
+2024/05/07 17:40:55 repository.go:263: ERROR: syntax error at or near "(" (SQLSTATE 42601)
+2024/05/07 17:40:55 expense_handlers.go:128: error delete expense:ERROR: syntax error at or near "(" (SQLSTATE 42601)
+2024/05/07 17:41:21 main.go:90: server shutting down
+2024/05/07 17:41:21 main.go:86: error run server: http: Server closed
+2024/05/07 17:51:22 repository.go:263: ERROR: syntax error at or near "(" (SQLSTATE 42601)
+2024/05/07 17:51:22 expense_handlers.go:128: error delete expense:ERROR: syntax error at or near "(" (SQLSTATE 42601)
+2024/05/07 17:55:36 main.go:90: server shutting down
+2024/05/07 17:55:36 main.go:86: error run server: http: Server closed
+2024/05/07 18:11:26 main.go:90: server shutting down
+2024/05/07 18:11:26 main.go:86: error run server: http: Server closed
+2024/05/07 18:11:39 repository.go:265: no rows in result set
+2024/05/07 18:11:39 expense_handlers.go:128: error delete expense:no rows in result set
+2024/05/07 18:15:53 main.go:90: server shutting down
+2024/05/07 18:15:53 main.go:86: error run server: http: Server closed
+2024/05/07 18:16:31 repository.go:267: id expense does not exist
+2024/05/07 18:16:31 expense_handlers.go:128: error delete expense:expense does not exist
+2024/05/07 18:16:33 repository.go:267: id expense does not exist
+2024/05/07 18:16:33 expense_handlers.go:128: error delete expense:expense does not exist
+2024/05/07 18:16:34 repository.go:267: id expense does not exist
+2024/05/07 18:16:34 expense_handlers.go:128: error delete expense:expense does not exist
+2024/05/07 18:19:05 main.go:90: server shutting down
+2024/05/07 18:19:05 main.go:86: error run server: http: Server closed
+2024/05/07 18:19:36 repository.go:268: id expense does not exist
+2024/05/07 18:19:36 expense_handlers.go:128: error delete expense:expense does not exist
+2024/05/07 18:21:21 main.go:90: server shutting down
+2024/05/07 18:21:21 main.go:86: error run server: http: Server closed
+2024/05/07 18:21:29 repository.go:267: id expense does not exist
+2024/05/07 18:21:29 expense_handlers.go:128: incorrect id expense
+2024/05/07 18:27:03 repository.go:153: ERROR: invalid input syntax for type timestamp: "07-04-2024-12:45:45" (SQLSTATE 22007)
+2024/05/07 18:27:03 expense_handlers.go:47: error get type expense:ERROR: invalid input syntax for type timestamp: "07-04-2024-12:45:45" (SQLSTATE 22007)
+2024/05/07 18:36:53 main.go:90: server shutting down
+2024/05/07 18:36:53 main.go:86: error run server: http: Server closed
+2024/05/07 18:37:21 repository.go:267: id expense does not exist
+2024/05/07 18:37:21 expense_handlers.go:128: incorrect id expense
+2024/05/07 18:38:17 main.go:90: server shutting down
+2024/05/07 18:38:17 main.go:86: error run server: http: Server closed
+2024/05/07 20:03:37 auth.go:65: empty authorization header
+2024/05/07 20:04:01 repository.go:304: number of field descriptions must equal number of destinations, got 4 and 1
+2024/05/07 20:04:01 expense_handlers.go:159: error get expense:number of field descriptions must equal number of destinations, got 4 and 1
+2024/05/07 20:08:18 main.go:90: server shutting down
+2024/05/07 20:08:18 main.go:86: error run server: http: Server closed
+2024/05/07 20:08:31 repository.go:304: number of field descriptions must equal number of destinations, got 4 and 1
+2024/05/07 20:08:31 expense_handlers.go:159: error get expense:number of field descriptions must equal number of destinations, got 4 and 1
+2024/05/07 20:11:07 main.go:90: server shutting down
+2024/05/07 20:11:07 main.go:86: error run server: http: Server closed
+2024/05/07 20:12:42 expense_handlers.go:176: parsing time "2024-05-07T12:45:45Z" as "2006-01-02 15:04:05": cannot parse "T12:45:45Z" as " "
+2024/05/07 20:13:00 expense_handlers.go:184: error update expense:ERROR: column "e" of relation "expense" does not exist (SQLSTATE 42703)
+2024/05/07 20:13:23 main.go:90: server shutting down
+2024/05/07 20:13:23 main.go:86: error run server: http: Server closed
+2024/05/07 20:20:19 main.go:90: server shutting down
+2024/05/07 20:20:19 main.go:86: error run server: http: Server closed

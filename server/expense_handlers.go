@@ -3,6 +3,7 @@ package server
 
 import (
 	"context"
+	dto "expenses/dto_expenses"
 	"expenses/repository"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,8 +28,34 @@ func NewServer(c *repository.ExpenseRepo) *Server {
 	return &Server{repo: c}
 }
 
+func (s *Server) CreateExpenseHandler(c *gin.Context) {
+	ctx := context.Background()
+	expense := &dto.CreateExpense{}
+	if err := c.BindJSON(expense); err != nil {
+		log.Printf("error get user data:%s", err.Error())
+		newErrorResponse(c, http.StatusBadRequest, "incorrect user data")
+		return
+	}
+	userId, err := getUserIdFromContext(c)
+	if err != nil {
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	expenseId, err := s.repo.CreateUserExpense(ctx, expense, userId)
+	if err != nil {
+		log.Printf("error get type expense:%s", err.Error())
+		newErrorResponse(c, http.StatusInternalServerError, "error get type expense")
+		return
+	}
+	// send expense type
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"expenseId": expenseId,
+	})
+}
+
 // GetExpenseHandler for get all types of expenses by user's id or login or name
-func (r *Server) GetExpenseHandler(c *gin.Context) {
+func (r *Server) GetExpenseTypeHandler(c *gin.Context) {
 	ctx := context.Background()
 	/*
 		user := &dto.TypesExpenseUserParams{}
@@ -52,6 +80,112 @@ func (r *Server) GetExpenseHandler(c *gin.Context) {
 	}
 	// send expense type
 	c.JSON(http.StatusOK, titleExpense)
+
+}
+
+// GetAllExpensesHandler get all expenses by user id
+func (s *Server) GetAllExpensesHandler(c *gin.Context) {
+	ctx := context.Background()
+	var expenses []dto.Expense
+	userId, err := getUserIdFromContext(c)
+	if err != nil {
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	expenses, err = s.repo.GetAllExpenses(ctx, userId)
+	if err != nil {
+		log.Printf("error get expenses:%s", err.Error())
+		newErrorResponse(c, http.StatusInternalServerError, "error get expenses")
+		return
+	}
+	for _, v := range expenses {
+		timeFormatted := v.Time.Format("2006-01-02 15:04:05")
+		v.Time, err = time.Parse("2006-01-02 15:04:05", timeFormatted)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	c.JSON(http.StatusOK, expenses)
+}
+
+func (s *Server) DeleteExpenseHandler(c *gin.Context) {
+	ctx := context.Background()
+	userID, err := getUserIdFromContext(c)
+	if err != nil {
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	expenseID, err := validateIdExpense(c.Param("id"))
+	if err != nil {
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, "incorrect expense id:"+err.Error())
+		return
+	}
+	idDeleteExpense, err := s.repo.DeleteExpense(ctx, expenseID, userID)
+	if idDeleteExpense == -1 {
+		log.Println("incorrect id expense")
+		newErrorResponse(c, http.StatusBadRequest, "incorrect id expense")
+		return
+	}
+	if err != nil {
+		log.Printf("error delete expense:%s", err.Error())
+		newErrorResponse(c, http.StatusInternalServerError, "error delete expense")
+		return
+	}
+
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"expense was deleted": idDeleteExpense,
+	})
+}
+
+func (s *Server) UpdateExpenseHandler(c *gin.Context) {
+	ctx := context.Background()
+	userID, err := getUserIdFromContext(c)
+	if err != nil {
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	expenseID, err := validateIdExpense(c.Param("id"))
+	if err != nil {
+		log.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, "incorrect expense id:"+err.Error())
+		return
+	}
+	expense, err := s.repo.GetExpense(ctx, userID, expenseID)
+	if err != nil {
+		log.Printf("error get expense:%s", err.Error())
+		newErrorResponse(c, http.StatusInternalServerError, "error get expenses")
+		return
+	}
+	var updateExpense dto.UpdateExpense
+	err = c.BindJSON(&updateExpense)
+	if err != nil {
+		log.Printf("error get user data:%s", err.Error())
+		newErrorResponse(c, http.StatusBadRequest, "incorrect user data")
+		return
+	}
+	if updateExpense.SpentMoney > 0 {
+		expense.SpentMoney = updateExpense.SpentMoney
+	}
+	if updateExpense.Time != "" {
+		expense.Time, err = time.Parse("2006-01-02 15:04:05", updateExpense.Time)
+		if err != nil {
+			log.Println(err)
+			newErrorResponse(c, http.StatusBadRequest, "incorrect time type")
+			return
+		}
+	}
+
+	err = s.repo.UpdateExpense(ctx, expenseID, expense)
+	if err != nil {
+		log.Printf("error update expense:%s", err.Error())
+		newErrorResponse(c, http.StatusInternalServerError, "error update expense")
+		return
+	}
+	c.JSON(http.StatusOK, "sucessed update expense")
 
 }
 
