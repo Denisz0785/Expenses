@@ -5,7 +5,7 @@ name: my-expenses
 services:
   app:
     build: ./
-   
+    restart: always
     ports:
       - 8000:8080
     depends_on: 
