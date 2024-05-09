@@ -157,7 +157,7 @@ func (s *Server) UpdateExpenseHandler(c *gin.Context) {
 	expense, err := s.repo.GetExpense(ctx, userID, expenseID)
 	if err != nil {
 		log.Printf("error get expense:%s", err.Error())
-		newErrorResponse(c, http.StatusInternalServerError, "error get expenses")
+		newErrorResponse(c, http.StatusNotFound, "error get expenses")
 		return
 	}
 	var updateExpense dto.UpdateExpense

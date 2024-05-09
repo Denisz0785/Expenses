@@ -303,3 +303,13 @@ created by net/http.(*Server).Serve in goroutine 22
 2024/05/07 20:13:23 main.go:86: error run server: http: Server closed
 2024/05/07 20:20:19 main.go:90: server shutting down
 2024/05/07 20:20:19 main.go:86: error run server: http: Server closed
+2024/05/09 16:11:32 utils.go:118: token has invalid claims: token is expired
+2024/05/09 16:11:32 auth.go:82: token has invalid claims: token is expired
+2024/05/09 16:13:07 repository.go:305: no rows in result set
+2024/05/09 16:13:07 expense_handlers.go:159: error get expense:no rows in result set
+2024/05/09 16:15:46 main.go:90: server shutting down
+2024/05/09 16:15:46 main.go:86: error run server: http: Server closed
+2024/05/09 16:15:55 repository.go:305: no rows in result set
+2024/05/09 16:15:55 expense_handlers.go:159: error get expense:no rows in result set
+2024/05/09 16:16:15 main.go:90: server shutting down
+2024/05/09 16:16:15 main.go:86: error run server: http: Server closed
