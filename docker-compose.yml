@@ -1,6 +1,9 @@
 version: '3.9'
+
+name: my-expenses
+
 services:
-  app1:
+  app:
     build: ./
    
     ports:
@@ -8,13 +11,13 @@ services:
     depends_on: 
       - db
     environment:
-      - MYURL1=postgres://expense_user:zorro@db:5432/expenses?sslmode=disable
+      - MYURL=postgres://expense_user:zorro@db:5432/expenses?sslmode=disable
       - DB_PASSWORD=zorro
     
 
 
   db:
-    image: postgres:latest
+    image: postgres:14.11
     restart: always
     environment:
       - POSTGRES_PASSWORD=zorro
@@ -23,6 +26,5 @@ services:
 
     ports:
       - 5436:5432  
-    volumes:
-      - /home/denis/projects/expense_db:/var/lib/postgresql/data
+
     container_name: postgres_exp
