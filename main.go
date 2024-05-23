@@ -36,8 +36,7 @@ func main() {
 	if err := initConfig(); err != nil {
 		log.Fatalf("error of initializing configs:%s", err.Error())
 	}
-	// Create new structure wich consist data about connection with database
-	ConnExpRepo := repository.NewExpenseRepo(conn)
+
 	/*
 		// define flags for getting values of flags command ./expenses cmd=get_expense_types user=Ivan and
 		// ./expenses -cmd=Add -login=igor23 -exp_type=swimming -time=2024-02-25-17:26 -spent=500
@@ -59,7 +58,7 @@ func main() {
 
 		case strings.EqualFold(*funcPtr, "Get_ManyRows"):
 			user := &dto.TypesExpenseUserParams{Name: *userPtr}
-			resultExpenses, err := ConnExpRepo.GetTypesExpenseUser(ctx, user)
+			resultExpenses, err := repos.GetTypesExpenseUser(ctx, user)
 			if err != nil {
 				fmt.Println(err.Error())
 			}
@@ -68,21 +67,25 @@ func main() {
 
 		case strings.EqualFold(*funcPtr, "add"):
 
-			err := ConnExpRepo.CreateUserExpense(ctx, loginPtr, expTypePtr, timePtr, spentPtr)
+			err := repos.CreateUserExpense(ctx, loginPtr, expTypePtr, timePtr, spentPtr)
 			if err != nil {
 				fmt.Println(err.Error())
 			}
 		case strings.EqualFold(*funcPtr, "run_server"):
 
 	*/
-	str := server.NewServer(ConnExpRepo)
-	srv := new(server.Connect)
+	// Create new structure wich consist data about connection with database
+	repos := repository.NewExpenseRepo(conn)
+	handlers := server.NewHandler(repos)
+
+	srv := new(server.Server)
+
 	// create signal channel
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	// run server in a goroutine
 	go func() {
-		if err := srv.Run(str.InitRoutes(), viper.GetString("port")); err != nil {
+		if err := srv.Run(handlers.InitRoutes(), viper.GetString("port")); err != nil {
 			log.Fatalf("error run server: %s", err.Error())
 		}
 	}()
@@ -91,13 +94,6 @@ func main() {
 	// Shutdown gracefully shuts down the server without interrupting any active connections
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Printf("Error of shutdown server:%s", err.Error())
-		/*	}
-
-			default:
-				fmt.Println("check your input data in a command-line")
-			}
-
-		*/
 
 	}
 }

@@ -13,14 +13,22 @@ import (
 )
 
 type Repository interface {
-	GetTypesExpenseUser()
-	GetExpenseType()
-	CreateValuesDB()
-	GetUserExpenseTypes()
-	CreateExpense()
-	CreateExpenseType()
-	GetExpenseTypeID()
-	SetExpenseTimeAndSpent()
+	GetTypesExpenseUser(ctx context.Context, userId int) ([]dto.ExpensesType, error)
+	GetUserId(ctx context.Context, expenseID int) (int, error)
+	IsExpenseTypeExists(ctx context.Context, expType string) (bool, error)
+	IsExpenseExists(ctx context.Context, expenseID int) (bool, error)
+	CreateExpenseType(ctx context.Context, tx pgx.Tx, expType string, userId int) (int, error)
+	GetExpenseTypeID(ctx context.Context, tx pgx.Tx, expType string) (int, error)
+	SetExpenseTimeAndSpent(ctx context.Context, tx pgx.Tx, expTypeId int, timeSpent string, spent float64) (int, error)
+	AddFileExpense(ctx context.Context, filepath string, expId int, typeFile string) error
+	CreateUserExpense(ctx context.Context, expenseData *dto.CreateExpense, userId int) (int, error)
+	GetAllExpenses(ctx context.Context, userId int) ([]dto.Expense, error)
+	DeleteExpense(ctx context.Context, expenseId, userId int) (int, error)
+	DeleteFile(ctx context.Context, pathFile string, expenseId int) error
+	GetExpense(ctx context.Context, userID, expenseID int) (*dto.Expense, error)
+	UpdateExpense(ctx context.Context, expenseID int, newExpense *dto.Expense) error
+	CreateUser(ctx context.Context, user *dto.User) (int, error)
+	GetUser(userName, hashPassword string) (*dto.User, error)
 }
 
 // ExpenseRepo create custom struct which contains descriptor of connection to database

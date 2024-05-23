@@ -2,10 +2,11 @@ package server
 
 import (
 	dto "expenses/dto_expenses"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -13,7 +14,7 @@ const (
 )
 
 // signUp registers new user
-func (s *Server) signUp(c *gin.Context) {
+func (h *Handler) signUp(c *gin.Context) {
 	var user dto.User
 	if err := c.BindJSON(&user); err != nil {
 		log.Printf("incorrect user data:%s", err.Error())
@@ -21,7 +22,7 @@ func (s *Server) signUp(c *gin.Context) {
 		return
 	}
 	user.Pass = hashPassword(user.Pass)
-	id, err := s.repo.CreateUser(c, &user)
+	id, err := h.repo.CreateUser(c, &user)
 	if err != nil {
 		log.Printf("error create user:%s", err.Error())
 		newErrorResponse(c, http.StatusInternalServerError, "error of create user")
@@ -39,7 +40,7 @@ type input struct {
 }
 
 // signIn authenticate user
-func (s *Server) signIn(c *gin.Context) {
+func (h *Handler) signIn(c *gin.Context) {
 	var user input
 	err := c.BindJSON(&user)
 	if err != nil {
@@ -47,7 +48,7 @@ func (s *Server) signIn(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	token, err := s.generateToken(user.Name, user.Pass)
+	token, err := h.generateToken(user.Name, user.Pass)
 	if err != nil {
 		log.Println(err)
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -59,7 +60,7 @@ func (s *Server) signIn(c *gin.Context) {
 }
 
 // userIdentity define id user by token and save id user to context
-func (s *Server) userIdentity(c *gin.Context) {
+func (h *Handler) userIdentity(c *gin.Context) {
 	header := c.GetHeader("Authorization")
 	if header == "" {
 		log.Println("empty authorization header")

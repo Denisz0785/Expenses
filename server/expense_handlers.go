@@ -18,17 +18,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Server contains a link to the database connection in the repository
-type Server struct {
-	repo *repository.ExpenseRepo
+// Handler contains a link to the database connection in the repository
+type Handler struct {
+	repo repository.Repository
 }
 
-// NewServer creates new struct Server
-func NewServer(c *repository.ExpenseRepo) *Server {
-	return &Server{repo: c}
+// NewHandler creates new struct Server
+func NewHandler(r repository.Repository) *Handler {
+	return &Handler{repo: r}
 }
 
-func (s *Server) CreateExpenseHandler(c *gin.Context) {
+func (h *Handler) CreateExpenseHandler(c *gin.Context) {
 	ctx := context.Background()
 	expense := &dto.CreateExpense{}
 	if err := c.BindJSON(expense); err != nil {
@@ -42,7 +42,7 @@ func (s *Server) CreateExpenseHandler(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	expenseId, err := s.repo.CreateUserExpense(ctx, expense, userId)
+	expenseId, err := h.repo.CreateUserExpense(ctx, expense, userId)
 	if err != nil {
 		log.Printf("error get type expense:%s", err.Error())
 		newErrorResponse(c, http.StatusInternalServerError, "error get type expense")
@@ -55,7 +55,7 @@ func (s *Server) CreateExpenseHandler(c *gin.Context) {
 }
 
 // GetExpenseHandler for get all types of expenses by user's id or login or name
-func (r *Server) GetExpenseTypeHandler(c *gin.Context) {
+func (h *Handler) GetExpenseTypeHandler(c *gin.Context) {
 	ctx := context.Background()
 	/*
 		user := &dto.TypesExpenseUserParams{}
@@ -72,7 +72,7 @@ func (r *Server) GetExpenseTypeHandler(c *gin.Context) {
 		return
 	}
 	// titleExpense keep title of expenses of  user
-	titleExpense, err := r.repo.GetTypesExpenseUser(ctx, userId)
+	titleExpense, err := h.repo.GetTypesExpenseUser(ctx, userId)
 	if err != nil {
 		log.Printf("error get type expense:%s", err.Error())
 		newErrorResponse(c, http.StatusInternalServerError, "error get type expense")
@@ -84,7 +84,7 @@ func (r *Server) GetExpenseTypeHandler(c *gin.Context) {
 }
 
 // GetAllExpensesHandler get all expenses by user id
-func (s *Server) GetAllExpensesHandler(c *gin.Context) {
+func (h *Handler) GetAllExpensesHandler(c *gin.Context) {
 	ctx := context.Background()
 	var expenses []dto.Expense
 	userId, err := getUserIdFromContext(c)
@@ -93,7 +93,8 @@ func (s *Server) GetAllExpensesHandler(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	expenses, err = s.repo.GetAllExpenses(ctx, userId)
+	fmt.Println(userId)
+	expenses, err = h.repo.GetAllExpenses(ctx, userId)
 	if err != nil {
 		log.Printf("error get expenses:%s", err.Error())
 		newErrorResponse(c, http.StatusInternalServerError, "error get expenses")
@@ -109,7 +110,7 @@ func (s *Server) GetAllExpensesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, expenses)
 }
 
-func (s *Server) DeleteExpenseHandler(c *gin.Context) {
+func (h *Handler) DeleteExpenseHandler(c *gin.Context) {
 	ctx := context.Background()
 	userID, err := getUserIdFromContext(c)
 	if err != nil {
@@ -123,7 +124,7 @@ func (s *Server) DeleteExpenseHandler(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, "incorrect expense id:"+err.Error())
 		return
 	}
-	idDeleteExpense, err := s.repo.DeleteExpense(ctx, expenseID, userID)
+	idDeleteExpense, err := h.repo.DeleteExpense(ctx, expenseID, userID)
 	if idDeleteExpense == -1 {
 		log.Println("incorrect id expense")
 		newErrorResponse(c, http.StatusBadRequest, "incorrect id expense")
@@ -140,7 +141,7 @@ func (s *Server) DeleteExpenseHandler(c *gin.Context) {
 	})
 }
 
-func (s *Server) UpdateExpenseHandler(c *gin.Context) {
+func (h *Handler) UpdateExpenseHandler(c *gin.Context) {
 	ctx := context.Background()
 	userID, err := getUserIdFromContext(c)
 	if err != nil {
@@ -154,7 +155,7 @@ func (s *Server) UpdateExpenseHandler(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, "incorrect expense id:"+err.Error())
 		return
 	}
-	expense, err := s.repo.GetExpense(ctx, userID, expenseID)
+	expense, err := h.repo.GetExpense(ctx, userID, expenseID)
 	if err != nil {
 		log.Printf("error get expense:%s", err.Error())
 		newErrorResponse(c, http.StatusNotFound, "error get expenses")
@@ -179,7 +180,7 @@ func (s *Server) UpdateExpenseHandler(c *gin.Context) {
 		}
 	}
 
-	err = s.repo.UpdateExpense(ctx, expenseID, expense)
+	err = h.repo.UpdateExpense(ctx, expenseID, expense)
 	if err != nil {
 		log.Printf("error update expense:%s", err.Error())
 		newErrorResponse(c, http.StatusInternalServerError, "error update expense")
@@ -190,7 +191,7 @@ func (s *Server) UpdateExpenseHandler(c *gin.Context) {
 }
 
 // UploadFile uploads file from user, write it to storage of server and write name of the file to database
-func (r *Server) UploadFile(c *gin.Context) {
+func (h *Handler) UploadFile(c *gin.Context) {
 	ctx := context.Background()
 	var newFileName, typeFile, absolutePath string
 	var userId int
@@ -203,7 +204,7 @@ func (r *Server) UploadFile(c *gin.Context) {
 		return
 	}
 	//check that expense's Id exist in a database
-	exist, err := r.repo.IsExpenseExists(ctx, expenseID)
+	exist, err := h.repo.IsExpenseExists(ctx, expenseID)
 	if err != nil || !exist {
 		log.Println(err)
 		newErrorResponse(c, http.StatusBadRequest, "incorrect expense id:"+err.Error())
@@ -280,7 +281,7 @@ func (r *Server) UploadFile(c *gin.Context) {
 	}
 
 	//AddFileExpense write info about file to the database
-	err = r.repo.AddFileExpense(c, newFileName, expenseID, typeFile)
+	err = h.repo.AddFileExpense(c, newFileName, expenseID, typeFile)
 	if err != nil {
 		err1 := os.Remove(absolutePath)
 		if err1 != nil {
@@ -296,7 +297,7 @@ func (r *Server) UploadFile(c *gin.Context) {
 }
 
 // DeleteFile removes file by name from the server's storage and database
-func (r *Server) DeleteFile(c *gin.Context) {
+func (h *Handler) DeleteFile(c *gin.Context) {
 	var nameFile string
 	var expenseID int
 	var userId int
@@ -316,7 +317,7 @@ func (r *Server) DeleteFile(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, "incorrect id expense")
 		return
 	}
-	exist, err := r.repo.IsExpenseExists(c, expenseID)
+	exist, err := h.repo.IsExpenseExists(c, expenseID)
 	if err != nil || !exist {
 		log.Println(err)
 		newErrorResponse(c, http.StatusBadRequest, "incorrect id expense")
@@ -349,7 +350,7 @@ func (r *Server) DeleteFile(c *gin.Context) {
 		return
 	}
 	//remove file from database
-	err = r.repo.DeleteFile(c, nameFile, expenseID)
+	err = h.repo.DeleteFile(c, nameFile, expenseID)
 	if err != nil {
 		log.Println(err)
 		newErrorResponse(c, http.StatusBadRequest, "error delete file")

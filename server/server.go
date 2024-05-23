@@ -8,11 +8,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Connect struct {
+type Server struct {
 	httpServer *http.Server
 }
 
-func (s *Server) InitRoutes() *gin.Engine {
+func (s *Handler) InitRoutes() *gin.Engine {
 	router := gin.New()
 
 	auth := router.Group("/auth")
@@ -40,7 +40,7 @@ func (s *Server) InitRoutes() *gin.Engine {
 }
 
 // Run create router and run a server
-func (c *Connect) Run(handler http.Handler, port string) error {
+func (c *Server) Run(handler http.Handler, port string) error {
 	c.httpServer = &http.Server{
 		Addr:           ":" + port,
 		Handler:        handler,
@@ -52,6 +52,6 @@ func (c *Connect) Run(handler http.Handler, port string) error {
 }
 
 // Shutdown gracefully shuts down the server without interrupting any active connections
-func (c *Connect) Shutdown(ctx context.Context) error {
+func (c *Server) Shutdown(ctx context.Context) error {
 	return c.httpServer.Shutdown(ctx)
 }

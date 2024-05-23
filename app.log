@@ -1,0 +1,8 @@
+2024/05/23 21:42:54 utils.go:120: token is malformed: could not base64 decode header: illegal base64 data at input byte 0
+2024/05/23 21:42:54 auth.go:83: token is malformed: could not base64 decode header: illegal base64 data at input byte 0
+2024/05/23 21:48:38 main.go:93: server shutting down
+2024/05/23 21:48:38 main.go:89: error run server: http: Server closed
+2024/05/23 21:57:25 repository.go:161: ERROR: invalid input syntax for type timestamp: "2024-05-22-17:23" (SQLSTATE 22007)
+2024/05/23 21:57:25 expense_handlers.go:47: error get type expense:ERROR: invalid input syntax for type timestamp: "2024-05-22-17:23" (SQLSTATE 22007)
+2024/05/23 22:00:10 main.go:93: server shutting down
+2024/05/23 22:00:10 main.go:89: error run server: http: Server closed

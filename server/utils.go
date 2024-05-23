@@ -4,13 +4,15 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+
 	"log"
 	"strconv"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -90,8 +92,8 @@ func hashPassword(pass string) string {
 
 }
 
-func (s *Server) generateToken(name, pass string) (string, error) {
-	user, err := s.repo.GetUser(name, hashPassword(pass))
+func (h *Handler) generateToken(name, pass string) (string, error) {
+	user, err := h.repo.GetUser(name, hashPassword(pass))
 	if err != nil {
 		log.Println(err.Error())
 		return "", err
