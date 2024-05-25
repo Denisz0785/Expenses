@@ -83,31 +83,40 @@ func (h *Handler) GetExpenseTypeHandler(c *gin.Context) {
 
 }
 
+type MySmallRepositoryForHandler interface {
+	GetAllExpenses(ctx context.Context, userId int) ([]dto.Expense, error)
+}
+
+// type H func(c *gin.Context)
+
 // GetAllExpensesHandler get all expenses by user id
-func (h *Handler) GetAllExpensesHandler(c *gin.Context) {
-	ctx := context.Background()
-	var expenses []dto.Expense
-	userId, err := getUserIdFromContext(c)
-	if err != nil {
-		log.Println(err)
-		newErrorResponse(c, http.StatusBadRequest, err.Error())
-		return
-	}
-	fmt.Println(userId)
-	expenses, err = h.repo.GetAllExpenses(ctx, userId)
-	if err != nil {
-		log.Printf("error get expenses:%s", err.Error())
-		newErrorResponse(c, http.StatusInternalServerError, "error get expenses")
-		return
-	}
-	for _, v := range expenses {
-		timeFormatted := v.Time.Format("2006-01-02 15:04:05")
-		v.Time, err = time.Parse("2006-01-02 15:04:05", timeFormatted)
+func NewMyHandler(repo MySmallRepositoryForHandler) func(c *gin.Context) {
+	return func(c *gin.Context) {
+
+		ctx := context.Background()
+		var expenses []dto.Expense
+		userId, err := getUserIdFromContext(c)
 		if err != nil {
 			log.Println(err)
+			newErrorResponse(c, http.StatusBadRequest, err.Error())
+			return
 		}
+
+		expenses, err = repo.GetAllExpenses(ctx, userId)
+		if err != nil {
+			log.Printf("error get expenses:%s", err.Error())
+			newErrorResponse(c, http.StatusInternalServerError, "error get expenses")
+			return
+		}
+		for _, v := range expenses {
+			timeFormatted := v.Time.Format("2006-01-02 15:04:05")
+			v.Time, err = time.Parse("2006-01-02 15:04:05", timeFormatted)
+			if err != nil {
+				log.Println(err)
+			}
+		}
+		c.JSON(http.StatusOK, expenses)
 	}
-	c.JSON(http.StatusOK, expenses)
 }
 
 func (h *Handler) DeleteExpenseHandler(c *gin.Context) {
