@@ -5,9 +5,10 @@ import (
 	"errors"
 	dto "expenses/dto_expenses"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
 	"log"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type Repository interface {
@@ -25,15 +26,15 @@ type tokenClaims struct {
 	UserId int `json:"user_id"`
 }
 
-func hashPassword(pass string) string {
+func HashPassword(pass string) string {
 	hash := sha256.New()
 	hash.Write([]byte(pass))
 	return fmt.Sprintf("%x", hash.Sum([]byte(salt)))
 
 }
 
-func generateToken(repo Repository, name, pass string) (string, error) {
-	user, err := repo.GetUser(name, hashPassword(pass))
+func GenerateToken(repo Repository, name, pass string) (string, error) {
+	user, err := repo.GetUser(name, HashPassword(pass))
 	if err != nil {
 		log.Println(err.Error())
 		return "", err
@@ -48,7 +49,7 @@ func generateToken(repo Repository, name, pass string) (string, error) {
 	return token.SignedString([]byte(signingKey))
 }
 
-func parseToken(inputToken string) (int, error) {
+func ParseToken(inputToken string) (int, error) {
 	token, err := jwt.ParseWithClaims(inputToken, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			log.Println("unexpected signing method")

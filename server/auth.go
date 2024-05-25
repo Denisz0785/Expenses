@@ -1,6 +1,7 @@
 package server
 
 import (
+	"expenses/app/auth"
 	dto "expenses/dto_expenses"
 	"log"
 	"net/http"
@@ -21,7 +22,7 @@ func (h *Handler) signUp(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, "incorrect user data")
 		return
 	}
-	user.Pass = hashPassword(user.Pass)
+	user.Pass = auth.HashPassword(user.Pass)
 	id, err := h.repo.CreateUser(c, &user)
 	if err != nil {
 		log.Printf("error create user:%s", err.Error())
@@ -48,7 +49,7 @@ func (h *Handler) signIn(c *gin.Context) {
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	token, err := h.generateToken(user.Name, user.Pass)
+	token, err := auth.GenerateToken(h.repo, user.Name, user.Pass)
 	if err != nil {
 		log.Println(err)
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
@@ -78,7 +79,7 @@ func (h *Handler) userIdentity(c *gin.Context) {
 		newErrorResponse(c, http.StatusUnauthorized, "missed token")
 		return
 	}
-	userId, err := parseToken(headerParts[1])
+	userId, err := auth.ParseToken(headerParts[1])
 	if err != nil {
 		log.Println(err)
 		newErrorResponse(c, http.StatusUnauthorized, err.Error())

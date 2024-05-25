@@ -1,3 +1,4 @@
+// package server contains handlers and server
 package server
 
 import (
@@ -26,7 +27,7 @@ func (s *Handler) InitRoutes() *gin.Engine {
 		{
 			expenses.GET("/type", s.GetExpenseTypeHandler)
 			expenses.POST("/", s.CreateExpenseHandler)
-			expenses.GET("/", s.GetAllExpensesHandler)
+			expenses.GET("/", NewMyHandler(s.repo))
 			expenses.DELETE("/:id", s.DeleteExpenseHandler)
 			expenses.PATCH("/:id", s.UpdateExpenseHandler)
 		}
