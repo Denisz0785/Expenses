@@ -11,7 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type Repository interface {
+type Repo interface {
 	GetUser(userName, hashPassword string) (*dto.User, error)
 }
 
@@ -33,7 +33,7 @@ func HashPassword(pass string) string {
 
 }
 
-func GenerateToken(repo Repository, name, pass string) (string, error) {
+func GenerateToken(repo Repo, name, pass string) (string, error) {
 	user, err := repo.GetUser(name, HashPassword(pass))
 	if err != nil {
 		log.Println(err.Error())

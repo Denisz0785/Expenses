@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"expenses/app/auth"
 	dto "expenses/dto_expenses"
 	"testing"
 	"time"
@@ -103,12 +104,12 @@ func TestGenerateToken(t *testing.T) {
 
 	name := "AidAmir"
 	pass := "qwerty"
-	hashPass := hashPassword(pass)
+	hashPass := auth.HashPassword(pass)
 	user := &dto.User{Id: 111}
 
 	mockRepository.On("GetUser", name, hashPass).Return(user, nil)
 
-	tokenString, err := handler.generateToken(name, pass)
+	tokenString, err := auth.GenerateToken(handler.repo, name, pass)
 
 	assert.NotEmpty(t, tokenString)
 	assert.NoError(t, err)
@@ -133,7 +134,7 @@ func TestParseToken(t *testing.T) {
 	tokenSigned, err := generateTestToken(t, expectedID)
 	assert.NoError(t, err)
 
-	userID, err := parseToken(tokenSigned)
+	userID, err := auth.ParseToken(tokenSigned)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedID, userID)
