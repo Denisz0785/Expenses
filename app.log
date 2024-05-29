@@ -6,3 +6,14 @@
 2024/05/23 21:57:25 expense_handlers.go:47: error get type expense:ERROR: invalid input syntax for type timestamp: "2024-05-22-17:23" (SQLSTATE 22007)
 2024/05/23 22:00:10 main.go:93: server shutting down
 2024/05/23 22:00:10 main.go:89: error run server: http: Server closed
+2024/05/25 20:20:22 auth.go:27: error get user no rows in result set
+2024/05/25 20:20:22 auth.go:39: no rows in result set
+2024/05/25 20:20:22 auth.go:54: no rows in result set
+2024/05/25 20:24:17 main.go:93: server shutting down
+2024/05/25 20:24:17 main.go:89: error run server: http: Server closed
+2024/05/25 20:58:45 main.go:93: server shutting down
+2024/05/25 20:58:45 main.go:89: error run server: http: Server closed
+2024/05/25 21:04:59 main.go:93: server shutting down
+2024/05/25 21:04:59 main.go:89: error run server: http: Server closed
+2024/05/25 21:08:33 main.go:93: server shutting down
+2024/05/25 21:08:33 main.go:89: error run server: http: Server closed

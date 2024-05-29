@@ -1,9 +1,7 @@
 package server
 
 import (
-	"crypto/sha256"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -65,6 +63,7 @@ func checkExtension(fileName string) (typeFile string, err error) {
 // getUserIdFromContext get user id from context
 func getUserIdFromContext(c *gin.Context) (int, error) {
 	id, ok := c.Get(userCtx)
+
 	if !ok {
 		log.Println("no user id found")
 		return 0, errors.New("user id not found")
@@ -85,12 +84,14 @@ func newErrorResponse(c *gin.Context, statusCode int, message string) {
 	c.AbortWithStatusJSON(statusCode, errorResponse{Message: message})
 }
 
+/*
 func hashPassword(pass string) string {
 	hash := sha256.New()
 	hash.Write([]byte(pass))
 	return fmt.Sprintf("%x", hash.Sum([]byte(salt)))
 
 }
+
 
 func (h *Handler) generateToken(name, pass string) (string, error) {
 	user, err := h.repo.GetUser(name, hashPassword(pass))
@@ -126,3 +127,4 @@ func parseToken(inputToken string) (int, error) {
 	}
 	return claims.UserId, nil
 }
+*/
